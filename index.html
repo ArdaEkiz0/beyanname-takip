@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeyanTakip</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --bg:#f0f2f5; --card-bg:#fff; --text:#1a1a2e; --text-muted:#5f6368; --border:#e0e0e0; --sidebar-bg:#fff; --hover-bg:#f0f0f0; --input-bg:#fff; }
+.dark-mode { --bg:#0f0f23; --card-bg:#1a1a3e; --text:#e0e0f0; --text-muted:#9e9eae; --border:#2a2a5a; --sidebar-bg:#12123a; --hover-bg:#1f1f4a; --input-bg:#1a1a3e; }
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; transition: background .3s, color .3s; }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; background: #fff; border-right: 1px solid #e0e0e0; z-index: 1000; display: flex; flex-direction: column; }
+.sidebar-brand { padding: 20px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 10px; }
+.sidebar-brand i { font-size: 24px; color: #1a73e8; }
+.sidebar-brand span { font-weight: 700; font-size: 18px; }
+.sidebar-nav { flex: 1; padding: 8px; overflow-y: auto; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; color: #5f6368; cursor: pointer; transition: all .15s; margin-bottom: 2px; font-size: 14px; font-weight: 500; text-decoration: none; }
+.nav-item:hover { background: #f1f3f4; color: #1a1a2e; }
+.nav-item.active { background: #e8f0fe; color: #1a73e8; font-weight: 600; }
+.nav-item i { font-size: 18px; width: 20px; text-align: center; }
+.nav-item .badge { margin-left: auto; font-size: 11px; }
+.main-content { margin-left: 240px; min-height: 100vh; }
+.topbar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.page-content { padding: 20px 24px; }
+.card { background: #fff; border-radius: 12px; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.stat-card { padding: 16px 20px; display: flex; align-items: center; gap: 14px; }
+.stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.stat-info h3 { font-size: 24px; font-weight: 700; margin: 0; line-height: 1.2; }
+.stat-info p { margin: 2px 0 0; color: #5f6368; font-size: 13px; }
+.table-custom { width: 100%; border-collapse: collapse; }
+.table-custom th { background: #f8f9fa; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #5f6368; padding: 10px 14px; text-align: left; border-bottom: 2px solid #e0e0e0; }
+.table-custom td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 14px; vertical-align: middle; }
+.table-custom tr:hover { background: #f8f9fa; }
+.status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.status-submitted { background: #e6f4ea; color: #1e7e34; }
+.status-pending { background: #fef7e0; color: #a86800; }
+.status-late { background: #fce8e6; color: #c5221f; }
+.btn-icon { width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+.page-section { display: none; }
+.page-section.active { display: block; }
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.show { transform: translateX(0); }
+  .main-content { margin-left: 0; }
+  .page-content { padding: 12px; }
+}
+#bulkActionsBar { display: none; padding: 10px 14px; border-bottom: 1px solid #e0e0e0; background: #f8f9fa; flex-wrap: wrap; gap: 8px; align-items: center; }
+tr.selected { background: #e8f0fe !important; }
+.cal-day { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:10px; font-size:13px; cursor:pointer; font-weight:500; transition:all .15s; position:relative; }
+.cal-day:hover { background:#e8f0fe; transform:scale(1.08); z-index:2; box-shadow:0 2px 8px rgba(0,0,0,.1); }
+.cal-day.today { background:#1a73e8; color:#fff; font-weight:700; box-shadow:0 2px 8px rgba(26,115,232,.3); }
+.cal-day.today:hover { background:#1557b0; }
+.cal-day.other { color:#bdc1c6; }
+.cal-day .count-badge { position:absolute; top:-4px; right:-4px; min-width:16px; height:16px; border-radius:8px; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px; color:#fff; }
+.cal-day .count-badge.deadline { background:#c5221f; }
+.cal-day .count-badge.submitted { background:#1e7e34; }
+.cal-day .cal-dots { display:flex; gap:2px; margin-top:2px; }
+.cal-day .cal-dots span { width:5px; height:5px; border-radius:50%; }
+.cal-day .cal-dots .dot-deadline { background:#c5221f; }
+.cal-day .cal-dots .dot-submitted { background:#1e7e34; }
+.cal-day .cal-dots .dot-upcoming { background:#a86800; }
+.cal-day .cal-dots .dot-holiday { background:#9c27b0; }
+.cal-day.holiday { background:#f3e5f5; }
+.cal-day.holiday:hover { background:#e1bee7; }
+
+/* Dark mode overrides */
+.dark-mode .sidebar { background:var(--sidebar-bg); border-color:var(--border); }
+.dark-mode .card { background:var(--card-bg); border-color:var(--border) !important; }
+.dark-mode .topbar { background:var(--card-bg); border-color:var(--border); }
+.dark-mode .form-control, .dark-mode .form-select { background:var(--input-bg); color:var(--text); border-color:var(--border); }
+.dark-mode .table-custom th { background:var(--hover-bg); }
+.dark-mode .table-custom td, .dark-mode .table-custom th { border-color:var(--border); }
+.dark-mode .modal-content { background:var(--card-bg); color:var(--text); }
+.dark-mode .modal-header { border-color:var(--border); }
+.dark-mode .modal-footer { border-color:var(--border); }
+.dark-mode .btn-close { filter:invert(1); }
+.dark-mode .text-muted { color:var(--text-muted) !important; }
+.dark-mode .cal-day.other { color:var(--text-muted); }
+.dark-mode .cal-day:not(.other):hover { background:var(--hover-bg); }
+.dark-mode .toast { background:var(--card-bg); color:var(--text); }
+.dark-mode .nav-item:hover { background:var(--hover-bg); }
+.dark-mode .sidebar-nav hr { border-color:var(--border); }
+.dark-mode .stat-card { background:var(--card-bg); }
+.dark-mode .table-custom tr:hover { background:var(--hover-bg); }
+.dark-mode .cal-day { color:var(--text); }
+.dark-mode input::placeholder { color:var(--text-muted); }
+
+/* Card view for clients */
+.client-card { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+.client-card .card-item { padding:16px; border-radius:12px; background:var(--card-bg); border:1px solid var(--border); cursor:pointer; transition:all .2s; }
+.client-card .card-item:hover { box-shadow:0 4px 12px rgba(0,0,0,.1); transform:translateY(-2px); }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand"><i class="bi bi-file-earmark-text"></i><span>BeyanTakip</span></div>
+  <nav class="sidebar-nav">
+    <a class="nav-item active" data-page="dashboard"><i class="bi bi-grid-1x2-fill"></i> Panel</a>
+    <a class="nav-item" data-page="clients"><i class="bi bi-people-fill"></i> MÃ¼kellefler</a>
+    <a class="nav-item" data-page="declarations"><i class="bi bi-file-earmark-text-fill"></i> Beyannameler <span class="badge bg-danger rounded-pill" id="pendingBadge" style="display:none;">0</span></a>
+    <a class="nav-item" data-page="calendar"><i class="bi bi-calendar3"></i> Takvim</a>
+    <a class="nav-item" data-page="news"><i class="bi bi-newspaper"></i> Haberler</a>
+    <hr style="margin:8px 0;border-color:#e0e0e0;">
+    <a class="nav-item" data-page="settings"><i class="bi bi-gear-fill"></i> Ayarlar</a>
+  </nav>
+</aside>
+
+<!-- Main -->
+<div class="main-content">
+  <header class="topbar">
+    <div>
+      <button class="btn btn-sm d-md-none" onclick="toggleSidebar()" style="border:none;"><i class="bi bi-list fs-4"></i></button>
+      <span class="fw-bold fs-5" id="pageTitle">Panel</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <input type="text" class="form-control form-control-sm" id="globalSearch" placeholder="Ara..." style="width:200px;" oninput="globalSearch(this.value)">
+    </div>
+  </header>
+  <div class="page-content">
+
+    <!-- DASHBOARD -->
+    <div class="page-section active" id="page-dashboard">
+      <!-- Stats Row -->
+      <div class="row g-3 mb-4" id="statsRow">
+        <div class="col-xl-2 col-lg-4 col-md-6">
+          <div class="card stat-card">
+            <div class="stat-icon" style="background:#e8f0fe;color:#1a73e8;"><i class="bi bi-people-fill"></i></div>
+            <div class="stat-info"><h3 id="statClients">0</h3><p>Toplam MÃ¼kellef</p></div>
+          </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+          <div class="card stat-card">
+            <div class="stat-icon" style="background:#e6f4ea;color:#1e7e34;"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="stat-info"><h3 id="statSubmitted">0</h3><p>Verilen</p></div>
+          </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+          <div class="card stat-card">
+            <div class="stat-icon" style="background:#fef7e0;color:#a86800;"><i class="bi bi-clock-fill"></i></div>
+            <div class="stat-info"><h3 id="statPending">0</h3><p>GÃ¶nderilecek</p></div>
+          </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+          <div class="card stat-card">
+            <div class="stat-icon" style="background:#fce8e6;color:#c5221f;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <div class="stat-info"><h3 id="statLate">0</h3><p>GecikmiÅŸ</p></div>
+          </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+          <div class="card stat-card">
+            <div class="stat-icon" style="background:#e8f5e9;color:#2e7d32;"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="stat-info"><h3 id="statCompletionRate">%0</h3><p>Tamamlama OranÄ±</p></div>
+          </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+          <div class="card stat-card">
+            <div class="stat-icon" style="background:#e3f2fd;color:#1565c0;"><i class="bi bi-calendar-check-fill"></i></div>
+            <div class="stat-info"><h3 id="statMonthDecls">0</h3><p>Bu Ay Beyanname</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <div class="card p-2" style="display:flex;flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center;">
+            <span class="fw-bold small me-2"><i class="bi bi-lightning-fill" style="color:#f9a825;"></i> HÄ±zlÄ± Ä°ÅŸlemler</span>
+            <button class="btn btn-sm btn-outline-danger" onclick="showPage('declarations');document.getElementById('declStatusFilter')&&(document.getElementById('declStatusFilter').value='late');renderDeclarations()"><i class="bi bi-exclamation-triangle"></i> GecikmiÅŸler</button>
+            <button class="btn btn-sm btn-outline-warning" onclick="showPage('declarations');document.getElementById('declStatusFilter')&&(document.getElementById('declStatusFilter').value='pending');renderDeclarations()"><i class="bi bi-clock"></i> Bekleyenler</button>
+            <button class="btn btn-sm btn-outline-primary" onclick="openDeclarationModal()"><i class="bi bi-plus-lg"></i> Beyanname Ekle</button>
+            <button class="btn btn-sm btn-outline-success" onclick="openClientModal()"><i class="bi bi-person-plus"></i> MÃ¼kellef Ekle</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="exportCSV()"><i class="bi bi-download"></i> CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 1: Upcoming + Table -->
+      <div class="row g-3">
+        <div class="col-xl-4 col-lg-5">
+          <div class="card p-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-bell" style="color:#f9a825;"></i> YaklaÅŸan Teslimler</h6>
+            <div id="upcomingList" style="max-height:300px;overflow-y:auto;"></div>
+          </div>
+        </div>
+        <div class="col-xl-8 col-lg-7">
+          <div class="card p-3">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <h6 class="fw-bold mb-0"><i class="bi bi-file-earmark-text"></i> Beyanname Durumu</h6>
+              <button class="btn btn-sm btn-outline-primary" onclick="showPage('declarations')">TÃ¼mÃ¼nÃ¼ GÃ¶r</button>
+            </div>
+            <div style="max-height:300px;overflow-y:auto;">
+              <table class="table-custom">
+                <thead><tr><th>MÃ¼kellef</th><th>TÃ¼r</th><th>DÃ¶nem</th><th>Son Tarih</th><th>Durum</th><th style="width:50px;"></th></tr></thead>
+                <tbody id="dashboardDeclarations"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Top Clients + Tag Distribution -->
+      <div class="row g-3 mt-3">
+        <div class="col-xl-5 col-lg-6">
+          <div class="card p-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-trophy" style="color:#f9a825;"></i> En Ã‡ok Beyannamesi Olan MÃ¼kellefler</h6>
+            <div id="topClientsList" style="max-height:220px;overflow-y:auto;"></div>
+          </div>
+        </div>
+        <div class="col-xl-7 col-lg-6">
+          <div class="card p-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-tags"></i> MÃ¼kellef Etiket DaÄŸÄ±lÄ±mÄ±</h6>
+            <div id="tagDistribution" style="max-height:220px;overflow-y:auto;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts + Stats row -->
+      <div class="row g-3 mt-3">
+        <div class="col-xl-4 col-lg-6">
+          <div class="card p-3">
+            <h6 class="fw-bold mb-2">DaÄŸÄ±lÄ±m</h6>
+            <canvas id="statusChart" style="max-height:180px;"></canvas>
+          </div>
+        </div>
+        <div class="col-xl-4 col-lg-6">
+          <div class="card p-3">
+            <h6 class="fw-bold mb-2">AylÄ±k Beyanname</h6>
+            <canvas id="monthChart" style="max-height:180px;"></canvas>
+          </div>
+        </div>
+        <div class="col-xl-4 col-lg-6">
+          <div class="card p-3 text-center">
+            <h6 class="fw-bold mb-2"><i class="bi bi-calendar3"></i> Bu Ay Kalan</h6>
+            <div id="monthCountdown" style="font-size:32px;font-weight:800;color:#1a73e8;">-</div>
+            <div class="text-muted small">gÃ¼n</div>
+            <div id="monthPendingCount" class="mt-1 small text-muted"></div>
+            <div id="monthSubmittedCount" class="small" style="color:#1e7e34;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly declarations -->
+      <div class="row g-3 mt-3">
+        <div class="col-12">
+          <div class="card p-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-calendar-check"></i> Bu Ay Beyannameleri</h6>
+            <div id="monthlyDecls" style="max-height:250px;overflow-y:auto;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Yearly comparison chart -->
+      <div class="row g-3 mt-3">
+        <div class="col-12">
+          <div class="card p-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-graph-up"></i> YÄ±llÄ±k KarÅŸÄ±laÅŸtÄ±rma</h6>
+            <canvas id="yearlyComparisonChart" style="max-height:250px;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div class="page-section" id="page-clients">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h4 class="fw-bold mb-0">MÃ¼kellefler <span class="text-muted small" id="clientsCount"></span></h4>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-sm btn-outline-secondary" onclick="toggleClientView()" id="viewToggleBtn" title="Kart/Liste gÃ¶rÃ¼nÃ¼mÃ¼"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+          <button class="btn btn-primary btn-sm" onclick="openClientModal()"><i class="bi bi-plus-lg"></i> Yeni</button>
+        </div>
+      </div>
+      <div class="card p-0">
+        <div style="padding:12px;border-bottom:1px solid #e0e0e0;display:flex;gap:8px;flex-wrap:wrap;">
+          <input type="text" class="form-control form-control-sm" id="clientSearch" placeholder="MÃ¼kellef ara..." style="max-width:220px;" oninput="renderClients()">
+          <select class="form-select form-select-sm" id="clientFilter" style="max-width:160px;" onchange="renderClients()">
+            <option value="all">TÃ¼mÃ¼</option>
+            <option value="with-pending">Bekleyen beyannamesi olanlar</option>
+            <option value="with-late">GecikmiÅŸ olanlar</option>
+          </select>
+          <select class="form-select form-select-sm" id="clientTagFilter" style="max-width:140px;" onchange="renderClients()">
+            <option value="all">TÃ¼m Etiketler</option>
+            <option value="Ã–ncelikli">Ã–ncelikli</option>
+            <option value="Yeni">Yeni</option>
+            <option value="DÃ¼zenli">DÃ¼zenli</option>
+            <option value="Ä°letiÅŸim Bekliyor">Ä°letiÅŸim Bekliyor</option>
+          </select>
+          <button class="btn btn-sm btn-outline-secondary" onclick="importClientsCSV()" title="CSV'den iÃ§e aktar"><i class="bi bi-upload"></i> CSV</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="table-custom">
+            <thead><tr><th>Ad Soyad / Unvan</th><th>Etiket</th><th>Vergi No</th><th>Vergi Dairesi</th><th>Telefon</th><th>Beyanname</th><th style="width:100px;">Ä°ÅŸlem</th></tr></thead>
+            <tbody id="clientsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DECLARATIONS -->
+    <div class="page-section" id="page-declarations">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h4 class="fw-bold mb-0">Beyannameler <span class="text-muted small" id="declCount"></span></h4>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" onclick="openDeclarationModal()"><i class="bi bi-plus-lg"></i> Ekle</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="generateAutoDeclarations()"><i class="bi bi-magic"></i> Otomatik</button>
+        </div>
+      </div>
+      <div class="card p-0">
+        <div style="padding:12px;border-bottom:1px solid #e0e0e0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <select class="form-select form-select-sm" id="declClientFilter" style="max-width:170px;" onchange="renderDeclarations()"><option value="all">TÃ¼m MÃ¼kellefler</option></select>
+          <select class="form-select form-select-sm" id="declTypeFilter" style="max-width:140px;" onchange="renderDeclarations()">
+            <option value="all">TÃ¼m TÃ¼rler</option>
+            <option value="KDV">KDV</option>
+            <option value="Muhtasar">Muhtasar</option>
+            <option value="GeÃ§ici Vergi">GeÃ§ici Vergi</option>
+            <option value="Kurumlar Vergisi">Kurumlar Vergisi</option>
+            <option value="Gelir Vergisi">Gelir Vergisi</option>
+          </select>
+          <select class="form-select form-select-sm" id="declStatusFilter" style="max-width:130px;" onchange="renderDeclarations()">
+            <option value="all">TÃ¼m Durumlar</option>
+            <option value="pending">Bekliyor</option>
+            <option value="submitted">Verildi</option>
+            <option value="late">GecikmiÅŸ</option>
+          </select>
+          <select class="form-select form-select-sm" id="declYearFilter" style="max-width:100px;" onchange="renderDeclarations()">
+            <option value="all">TÃ¼m YÄ±llar</option>
+          </select>
+          <button class="btn btn-outline-secondary btn-sm ms-auto" onclick="exportCSV()" title="CSV dÄ±ÅŸa aktar"><i class="bi bi-download"></i> CSV</button>
+        </div>
+        <div id="bulkActionsBar">
+          <span class="fw-semibold small" id="bulkSelectedCount">0 seÃ§ili</span>
+          <button class="btn btn-sm btn-success" onclick="bulkMarkSubmitted()"><i class="bi bi-check-lg"></i> Verildi Yap</button>
+          <button class="btn btn-sm btn-danger" onclick="bulkDelete()"><i class="bi bi-trash"></i> Sil</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="clearSelection()"><i class="bi bi-x"></i> Temizle</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="table-custom">
+            <thead><tr><th style="width:36px;"><input type="checkbox" id="selectAllDecls" onchange="toggleSelectAll(this)"></th><th>MÃ¼kellef</th><th>TÃ¼r</th><th>DÃ¶nem</th><th>YÄ±l</th><th>Son Teslim</th><th>GÃ¶nderilme</th><th>Durum</th><th style="width:100px;">Ä°ÅŸlem</th></tr></thead>
+            <tbody id="declarationsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="page-section" id="page-calendar">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h4 class="fw-bold mb-0">Vergi Takvimi</h4>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-outline-secondary btn-sm" onclick="goToday()"><i class="bi bi-calendar-week"></i> BugÃ¼n</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+          <span class="fw-semibold" id="calendarMonthYear" style="min-width:180px;text-align:center;"></span>
+          <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-xl-8">
+          <div class="card p-3">
+            <div class="d-grid mb-2" style="grid-template-columns:repeat(7,1fr);gap:3px;">
+              <div class="text-center small fw-bold text-muted py-1">Pzt</div><div class="text-center small fw-bold text-muted py-1">Sal</div><div class="text-center small fw-bold text-muted py-1">Ã‡ar</div><div class="text-center small fw-bold text-muted py-1">Per</div><div class="text-center small fw-bold text-muted py-1">Cum</div><div class="text-center small fw-bold text-muted py-1">Cmt</div><div class="text-center small fw-bold text-muted py-1">Paz</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;" id="calendarGrid"></div>
+            <div class="mt-3 pt-2 border-top d-flex gap-3 flex-wrap small text-muted">
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c5221f;margin-right:4px;"></span> Teslim tarihi</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1e7e34;margin-right:4px;"></span> VerilmiÅŸ</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#a86800;margin-right:4px;"></span> YaklaÅŸan</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9c27b0;margin-right:4px;"></span> Resmi Tatil</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-4">
+          <div class="card p-3" style="height:100%;">
+            <h6 class="fw-bold mb-2"><i class="bi bi-calendar-day"></i> <span id="selectedDayTitle">SeÃ§ili GÃ¼n</span></h6>
+            <div id="selectedDayInfo" class="text-center text-muted py-4"><i class="bi bi-calendar3 fs-1 d-block mb-2"></i>Bir gÃ¼n seÃ§in</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEWS -->
+    <div class="page-section" id="page-news">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h4 class="fw-bold mb-0">Mali Haberler <span class="text-muted small fw-normal" id="newsCount"></span></h4>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-outline-primary btn-sm" onclick="fetchNews()"><i class="bi bi-arrow-clockwise"></i> GÃ¼ncelle</button>
+        </div>
+      </div>
+      <div class="row g-3" id="newsContainer">
+        <div class="col-12 text-center py-5 text-muted"><i class="bi bi-newspaper fs-1 d-block mb-2"></i><p>Haberler yÃ¼kleniyor...</p></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page-section" id="page-settings">
+      <h4 class="fw-bold mb-3">Ayarlar</h4>
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="card p-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-database"></i> Veri YÃ¶netimi</h6>
+            <div class="d-flex flex-column gap-2">
+              <button class="btn btn-outline-secondary btn-sm" onclick="exportData()"><i class="bi bi-download"></i> Yedekle (JSON)</button>
+              <button class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('importFile').click()"><i class="bi bi-upload"></i> Yedekten YÃ¼kle</button>
+              <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+              <button class="btn btn-outline-danger btn-sm" onclick="resetAll()"><i class="bi bi-trash"></i> TÃ¼mÃ¼nÃ¼ SÄ±fÄ±rla</button>
+            </div>
+          </div>
+          <div class="card p-3 mt-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-bell"></i> Bildirimler</h6>
+            <div class="d-flex align-items-center gap-2">
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="notifToggle" onchange="toggleNotifications()">
+              </div>
+              <label class="small" for="notifToggle">YaklaÅŸan teslimler iÃ§in tarayÄ±cÄ± bildirimi gÃ¶nder</label>
+            </div>
+            <p class="small text-muted mt-1 mb-0">Her sayfa yÃ¼klendiÄŸinde 7 gÃ¼n iÃ§indeki teslimleri kontrol eder.</p>
+          </div>
+          <div class="card p-3 mt-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-palette"></i> GÃ¶rÃ¼nÃ¼m</h6>
+            <div class="d-flex align-items-center gap-2">
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+              </div>
+              <label class="small" for="darkModeToggle">KaranlÄ±k Tema</label>
+            </div>
+          </div>
+          <div class="card p-3 mt-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-soundwave"></i> Sesli Bildirim</h6>
+            <div class="d-flex align-items-center gap-2">
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="soundToggle" onchange="toggleSound()">
+              </div>
+              <label class="small" for="soundToggle">Ä°ÅŸlem tamamlandÄ±ÄŸÄ±nda ses Ã§al</label>
+            </div>
+          </div>
+          <div class="card p-3 mt-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-keyboard"></i> Klavye KÄ±sayollarÄ± <button class="btn btn-sm btn-outline-secondary" style="font-size:10px;padding:0 6px;" onclick="resetShortcuts()">SÄ±fÄ±rla</button></h6>
+            <div class="small" id="shortcutsEditor"></div>
+            <button class="btn btn-sm btn-primary mt-2" onclick="saveShortcuts()">KÄ±sayollarÄ± Kaydet</button>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card p-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-currency-dollar"></i> Ã–deme KayÄ±tlarÄ±</h6>
+            <div style="max-height:300px;overflow-y:auto;" id="paymentsList">
+              <p class="small text-muted mb-0">HiÃ§ Ã¶deme kaydÄ± yok.</p>
+            </div>
+          </div>
+          <div class="card p-3 mt-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-archive"></i> YÄ±l ArÅŸivi</h6>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+              <label class="small">YÄ±l seÃ§:</label>
+              <select class="form-select form-select-sm" id="archiveYearSelector" style="max-width:120px;" onchange="filterByArchiveYear()">
+                <option value="all">TÃ¼mÃ¼</option>
+              </select>
+              <button class="btn btn-sm btn-outline-secondary" onclick="renderAll()">Temizle</button>
+            </div>
+            <p class="small text-muted mt-1 mb-0">SeÃ§ilen yÄ±la ait beyannameleri filtreler.</p>
+          </div>
+          <div class="card p-3 mt-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-cloud-download"></i> GÃ¼ncelleme</h6>
+            <p class="small text-muted mb-1">SÃ¼rÃ¼m: <span id="appVersionLabel">1.0.0</span></p>
+            <button class="btn btn-sm btn-outline-primary" id="updateCheckBtn" onclick="checkForUpdates(true)"><i class="bi bi-arrow-clockwise"></i> GÃ¼ncellemeleri Kontrol Et</button>
+            <p class="small text-muted mt-1 mb-0">Yeni sÃ¼rÃ¼m varsa otomatik indirilir, eski dosyanÄ±n Ã¼zerine kopyalamanÄ±z yeterli.</p>
+          </div>
+          <div class="card p-3 mt-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-info-circle"></i> Uygulama HakkÄ±nda</h6>
+            <p class="small text-muted mb-0">BeyanTakip v2.0 - TÃ¼m veriler yerel bilgisayarÄ±nÄ±zda saklanÄ±r.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Client Modal -->
+<div class="modal fade" id="clientModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="clientModalTitle">Yeni MÃ¼kellef</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="clientId">
+        <div class="mb-2"><label class="form-label small fw-semibold">Ad Soyad / Unvan *</label><input type="text" class="form-control form-control-sm" id="clientName"></div>
+        <div class="row g-2 mb-2">
+          <div class="col"><label class="form-label small fw-semibold">Vergi No</label><input type="text" class="form-control form-control-sm" id="clientTaxNo"></div>
+          <div class="col"><label class="form-label small fw-semibold">Vergi Dairesi</label><input type="text" class="form-control form-control-sm" id="clientTaxOffice"></div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col"><label class="form-label small fw-semibold">Telefon</label><input type="text" class="form-control form-control-sm" id="clientPhone"></div>
+          <div class="col"><label class="form-label small fw-semibold">E-posta</label><input type="email" class="form-control form-control-sm" id="clientEmail"></div>
+        </div>
+        <div class="mb-2"><label class="form-label small fw-semibold">Etiket</label><select class="form-select form-select-sm" id="clientTag"><option value="">Yok</option><option value="Ã–ncelikli">Ã–ncelikli</option><option value="Yeni">Yeni</option><option value="DÃ¼zenli">DÃ¼zenli</option><option value="Ä°letiÅŸim Bekliyor">Ä°letiÅŸim Bekliyor</option></select></div>
+        <div class="mb-2"><label class="form-label small fw-semibold">Ek Dosya</label><input type="file" class="form-control form-control-sm" id="clientFile" onchange="handleClientFile(this)"></div>
+        <div id="clientFileInfo" class="small text-muted mb-2"></div>
+        <div><label class="form-label small fw-semibold">Not</label><textarea class="form-control form-control-sm" id="clientNotes" rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Ä°ptal</button><button class="btn btn-primary btn-sm" onclick="saveClient()">Kaydet</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Client Detail Modal -->
+<div class="modal fade" id="clientDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="clientDetailTitle">MÃ¼kellef Detay</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="detailClientId">
+        <div class="row g-2 mb-3">
+          <div class="col-md-6"><strong>Vergi No:</strong> <span id="detailTaxNo"></span></div>
+          <div class="col-md-6"><strong>Vergi Dairesi:</strong> <span id="detailTaxOffice"></span></div>
+          <div class="col-md-6"><strong>Telefon:</strong> <span id="detailPhone"></span></div>
+          <div class="col-md-6"><strong>E-posta:</strong> <span id="detailEmail"></span></div>
+          <div class="col-12"><strong>Not:</strong> <span id="detailNotes" class="text-muted"></span></div>
+        </div>
+        <h6 class="fw-bold mb-2">Beyannameleri</h6>
+        <div style="max-height:300px;overflow-y:auto;">
+          <table class="table-custom">
+            <thead><tr><th>TÃ¼r</th><th>DÃ¶nem</th><th>YÄ±l</th><th>Son Teslim</th><th>Durum</th></tr></thead>
+            <tbody id="detailDeclarations"></tbody>
+          </table>
+        </div>
+        <div class="mt-2" style="display:flex;gap:8px;">
+          <button class="btn btn-sm btn-outline-primary" onclick="openPaymentModal(document.getElementById('detailClientId').value)"><i class="bi bi-currency-dollar"></i> Ã–deme Ekle</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="printClientReport()"><i class="bi bi-printer"></i> Rapor</button>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Kapat</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Ã–deme KaydÄ±</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="paymentClientId">
+        <div class="mb-2"><label class="form-label small fw-semibold">Tutar (TL)</label><input type="number" class="form-control form-control-sm" id="paymentAmount" step="0.01"></div>
+        <div class="mb-2"><label class="form-label small fw-semibold">Tarih</label><input type="date" class="form-control form-control-sm" id="paymentDate"></div>
+        <div class="mb-2"><label class="form-label small fw-semibold">AÃ§Ä±klama</label><input type="text" class="form-control form-control-sm" id="paymentNote" placeholder="Ã¶rn: Mart 2026 Ã¼creti"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Ä°ptal</button><button class="btn btn-primary btn-sm" onclick="savePayment()">Ekle</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Declaration Modal -->
+<div class="modal fade" id="declModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="declModalTitle">Yeni Beyanname</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="declId">
+        <div class="mb-2"><label class="form-label small fw-semibold">MÃ¼kellef *</label><select class="form-select form-select-sm" id="declClient"></select></div>
+        <div class="mb-2"><label class="form-label small fw-semibold">TÃ¼r *</label><select class="form-select form-select-sm" id="declType" onchange="updatePeriodOptions()">
+          <option value="KDV">KDV</option><option value="Muhtasar">Muhtasar</option><option value="GeÃ§ici Vergi">GeÃ§ici Vergi</option><option value="Kurumlar Vergisi">Kurumlar Vergisi</option><option value="Gelir Vergisi">Gelir Vergisi</option>
+        </select></div>
+        <div class="row g-2 mb-2">
+          <div class="col"><label class="form-label small fw-semibold">DÃ¶nem *</label><select class="form-select form-select-sm" id="declPeriod"></select></div>
+          <div class="col"><label class="form-label small fw-semibold">YÄ±l *</label><select class="form-select form-select-sm" id="declYear"></select></div>
+        </div>
+        <div class="mb-2"><label class="form-label small fw-semibold">Son Teslim *</label><input type="date" class="form-control form-control-sm" id="declDueDate"></div>
+        <div class="mb-2"><label class="form-label small fw-semibold">GÃ¶nderilme Tarihi</label><input type="date" class="form-control form-control-sm" id="declSubmitDate"></div>
+        <div><label class="form-label small fw-semibold">Durum</label><select class="form-select form-select-sm" id="declStatus"><option value="pending">Bekliyor</option><option value="submitted">Verildi</option><option value="late">GecikmiÅŸ</option></select></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Ä°ptal</button><button class="btn btn-primary btn-sm" onclick="saveDeclaration()">Kaydet</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const STORAGE_KEY = 'beyantakip_data';
+const MONTHS = ['','Ocak','Åubat','Mart','Nisan','MayÄ±s','Haziran','Temmuz','AÄŸustos','EylÃ¼l','Ekim','KasÄ±m','AralÄ±k'];
+const QNAMES = {1:'Ocak-Mart',4:'Nisan-Haziran',7:'Temmuz-EylÃ¼l',10:'Ekim-AralÄ±k'};
+const DECL_TYPES = {
+  KDV: { periods: [1,2,3,4,5,6,7,8,9,10,11,12], dueDate: (y,p) => `${y}-${String(p).padStart(2,'0')}-26` },
+  Muhtasar: { periods: [1,2,3,4,5,6,7,8,9,10,11,12], dueDate: (y,p) => `${y}-${String(p).padStart(2,'0')}-26` },
+  'GeÃ§ici Vergi': { periods: [1,4,7,10], dueDate: (y,p) => ({1:`${y}-05-17`,4:`${y}-08-17`,7:`${y}-11-17`,10:`${y+1}-02-17`})[p] },
+  'Kurumlar Vergisi': { periods: [1], dueDate: (y) => `${y}-04-30` },
+  'Gelir Vergisi': { periods: [1], dueDate: (y) => `${y}-03-31` }
+};
+const TURKISH_HOLIDAYS = [
+  { month:1, day:1, name:'YÄ±lbaÅŸÄ±' },
+  { month:4, day:23, name:'Ulusal Egemenlik ve Ã‡ocuk BayramÄ±' },
+  { month:5, day:1, name:'Emek ve DayanÄ±ÅŸma GÃ¼nÃ¼' },
+  { month:5, day:19, name:'AtatÃ¼rk\'Ã¼ Anma, GenÃ§lik ve Spor BayramÄ±' },
+  { month:7, day:15, name:'Demokrasi ve Milli Birlik GÃ¼nÃ¼' },
+  { month:8, day:30, name:'Zafer BayramÄ±' },
+  { month:10, day:29, name:'Cumhuriyet BayramÄ±' },
+];
+const DEFAULT_NEWS = [
+  { title: 'KDV Beyannamesi Teslim SÃ¼releri', description: 'KDV beyannameleri her ayÄ±n 26. gÃ¼nÃ¼ mesai bitimine kadar verilmelidir.', url: '#', source: 'Mali Haber', date: new Date().toISOString() },
+  { title: 'Muhtasar Beyanname DÃ¶nemi', description: 'Muhtasar beyannameler her ayÄ±n 26. gÃ¼nÃ¼ne kadar verilmelidir.', url: '#', source: 'Mali Haber', date: new Date().toISOString() },
+  { title: 'GeÃ§ici Vergi DÃ¶nemleri', description: 'GeÃ§ici vergi beyannameleri MayÄ±s, AÄŸustos, KasÄ±m ve Åubat aylarÄ±nda verilir.', url: '#', source: 'Mali Haber', date: new Date().toISOString() },
+  { title: 'Kurumlar Vergisi Beyannamesi', description: 'Kurumlar vergisi beyannamesi Nisan ayÄ± sonuna kadar verilmelidir.', url: '#', source: 'Mali Haber', date: new Date().toISOString() },
+  { title: 'Gelir Vergisi Beyannamesi', description: 'Gelir vergisi beyannamesi Mart ayÄ± sonuna kadar verilmelidir.', url: '#', source: 'Mali Haber', date: new Date().toISOString() },
+];
+const DEFAULT_CLIENTS = [
+  {id:"7715d1d3bacd48c",name:"HALÄ°L Ä°BRAHÄ°M AKOÄLAN",taxNo:"0320140429",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: AKOÄLAN - TCKN: 13079499248",tag:"DÃ¼zenli"},
+  {id:"0dc227d2e5734dd",name:"ERAY ALAÃ‡I",taxNo:"0470136421",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ALAÃ‡I - TCKN: 16549561018",tag:""},
+  {id:"09163ad1db6f4a1",name:"ALÄ° DEMÄ°REL",taxNo:"2840201877",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ALÄ° DEMÄ°RE - TCKN: 37147696902",tag:"Ã–ncelikli"},
+  {id:"389b9ce233294fc",name:"ALÄ° GÃœZELDERE",taxNo:"4531322443",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ALÄ°GÃœZELDE - TCKN: 53443154212",tag:""},
+  {id:"9b59cb5c4c4a45a",name:"ALÄ° Ã–ÄRETÄ°CÄ°",taxNo:"6520425295",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: A.Ã–ÄRETÄ°CÄ° - TCKN: 44437454050",tag:"Yeni"},
+  {id:"cf6ac0461a1742e",name:"AYDIN ÅEN",taxNo:"8020261327",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: AYDIN - TCKN: 49609281694",tag:""},
+  {id:"8a692e9c80d9419",name:"BARIÅ SEZGÄ°N",taxNo:"7680694287",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: BARIÅ - TCKN: 48703312020",tag:"DÃ¼zenli"},
+  {id:"54171906f508411",name:"BURAK DERELÄ°",taxNo:"2921201866",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: B.DERELÄ° - TCKN: 50845240840",tag:"Ä°letiÅŸim Bekliyor"},
+  {id:"7dc1bc21b3cf400",name:"BÄ°ROL ENGÄ°N",taxNo:"3350329955",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: BÄ°ROL - TCKN: 43984469142",tag:"Ã–ncelikli"},
+  {id:"1be8bc24f6094c8",name:"ALÄ° CANSEVEN",taxNo:"2020170223",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: CANSEVEN - TCKN: 45199428686",tag:""},
+  {id:"bda1fdb1882e411",name:"AKÄ°F Ã‡AMLI",taxNo:"2280937388",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: Ã‡AMLI - TCKN: 27620014552",tag:"DÃ¼zenli"},
+  {id:"0641931001a242c",name:"Ä°LHAN Ã‡OLAK",taxNo:"2600297052",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: Ã‡OLAK - TCKN: 21488219364",tag:""},
+  {id:"06d9b867c15b4e3",name:"DAVUD TUNCER",taxNo:"8640185288",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: DAVUD - TCKN: 50659246748",tag:"Yeni"},
+  {id:"7715760080304f6",name:"MEHMET EFEOÄLU",taxNo:"3250316286",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: EFEOÄLU - TCKN: 15389422688"},
+  {id:"33089f74b75f4ca",name:"ERDEM GÃœLMEZ",taxNo:"4210485457",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ERDEM - TCKN: 11441554038"},
+  {id:"e2d95349bf9241d",name:"HALÄ°L Ä°BRAHÄ°M FÄ°DAN",taxNo:"3870511832",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: FÄ°DAN - TCKN: 13397488856"},
+  {id:"3783c7e78043424",name:"MÄ°KAÄ°L EKÄ°Z ORTAKLIÄI",taxNo:"3290167759",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: GÃ–KKUÅAÄI"},
+  {id:"1fcf18bae0be42d",name:"GÃœRKAN ÅAHÄ°N",taxNo:"7910327296",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: G.ÅAHÄ°N - TCKN: 42100532142"},
+  {id:"54c832411a434e1",name:"GÃœLTEKÄ°N GÃœL",taxNo:"4130549034",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: GÃœLTEKÄ°N - TCKN: 42373522840"},
+  {id:"c48535eb351446a",name:"GÃœRCAN EKÄ°Z",taxNo:"3290167700",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: GÃœRCAN - TCKN: 46057400028"},
+  {id:"a124388fc8b84cc",name:"AHMET GÃœZELDERE",taxNo:"4530519945",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: GÃœZELDERE - TCKN: 24404121772"},
+  {id:"6c9c1bc53c71469",name:"HAKAN YAZAN",taxNo:"9430534911",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: HAKAN - TCKN: 33775809608"},
+  {id:"d0bb4a45529f45a",name:"HAYRETTÄ°N BALTA",taxNo:"1390224429",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: HAYRETTÄ°N - TCKN: 55159096954"},
+  {id:"096cdd59bccf4ab",name:"Ä°ZZET ALTIOK",taxNo:"0660125420",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: Ä°.ALTIOK - TCKN: 37558698786"},
+  {id:"5fd83972a536471",name:"Ä°BRAHÄ°M DEVRÄ°M KAYA",taxNo:"5320391908",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: Ä°.DEVRÄ°M - TCKN: 55915071430"},
+  {id:"a792c26fbcca445",name:"Ä°SA CURA",taxNo:"2160086791",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: Ä°SA - TCKN: 47887635772"},
+  {id:"1dc215374c854b0",name:"HÃœSEYÄ°N KARAEL",taxNo:"5100513664",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: KARAEL - TCKN: 25298092186"},
+  {id:"2a2fe621a0a049c",name:"HÃœSEYÄ°N KAYMAK",taxNo:"5390040901",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: KAYMAK - TCKN: 48823307814"},
+  {id:"5749073e1e7d468",name:"MEDENÄ° KILIÃ‡",taxNo:"5510269990",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: KILIÃ‡ - TCKN: 37492205484"},
+  {id:"6df0968b5b7c4c1",name:"SEDAT KIRLIOÄLU",taxNo:"5581264664",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: KIRLIOÄLU - TCKN: 14171463298"},
+  {id:"63f32c3bc5cb493",name:"YILMAZ KOCAOÄLAN",taxNo:"5660340932",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: KOCAOÄLAN - TCKN: 32194862218"},
+  {id:"4c1fd641a1d741e",name:"MUSTAFA AKDEMÄ°R",taxNo:"0210273881",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: M.AKDEMÄ°R - TCKN: 34933770792"},
+  {id:"2988155c93ab498",name:"MUSTAFA AKKUL",taxNo:"0300279270",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: M.AKKUL - TCKN: 15035434218"},
+  {id:"00c045374bc24f1",name:"MEHMET Ã–ÄRETÄ°CÄ°",taxNo:"6520299105",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: M.Ã–ÄRETÄ°CÄ° - TCKN: 44479452694"},
+  {id:"85875434ac3c46c",name:"YAKUP NAR",taxNo:"6290357957",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: NAR - TCKN: 47293358944"},
+  {id:"ca4bddd7002b469",name:"ONUR GÃœL",taxNo:"4140763439",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ONUR GÃœL - TCKN: 23582149486"},
+  {id:"1e91a37ba46949c",name:"Ã–NDER Ã–ZEL",taxNo:"6850465018",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: Ã–NDER Ã–ZEL - TCKN: 33595815728"},
+  {id:"b4f7a04d5cfe414",name:"MURAT Ã–NER",taxNo:"6580465896",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: Ã–NER - TCKN: 26846040628"},
+  {id:"0274620000a44c8",name:"Ã–ZAY NALCI",taxNo:"6280217518",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: Ã–ZAY - TCKN: 23354157022"},
+  {id:"774748ad7a6949c",name:"RAMAZAN BALTA",taxNo:"1390067660",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: RAMAZAN - TCKN: 55150097226"},
+  {id:"9dcaf5f447094bf",name:"RECEP EKÄ°M",taxNo:"3280377787",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: RECEP - TCKN: 10739577346"},
+  {id:"d6a97bc5f29e4c5",name:"SERDAR SARIKAYA",taxNo:"7490598082",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: SERDAR - TCKN: 56941037612"},
+  {id:"22eee441e49c4c3",name:"SERKAN Ã‡OBAN",taxNo:"2580464792",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: SERKAN - TCKN: 57433021218"},
+  {id:"816362fd3dc3408",name:"ÅENNUR AKYOL",taxNo:"5561389391",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: Å.AKYOL - TCKN: 51943204222"},
+  {id:"1612391507b14cc",name:"ÅENOL KÃœÃ‡ÃœK",taxNo:"6030280256",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ÅENOL - TCKN: 10421588032"},
+  {id:"b9c9ecaf7e9845c",name:"TAHSÄ°N KESGÄ°N",taxNo:"5470251532",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: TAHSÄ°N - TCKN: 46849373622"},
+  {id:"ded46fdd996b41b",name:"ARÄ°F UÃ‡AR",taxNo:"8840173323",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: UÃ‡AR - TCKN: 43606481798"},
+  {id:"12c527fe4d69487",name:"UFUK TURNA",taxNo:"8710282030",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: UFUK - TCKN: 43651480180"},
+  {id:"c5e465df8e13450",name:"MERYEM UZUN",taxNo:"9020162260",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: UZUN - TCKN: 35663106752"},
+  {id:"d2425f11e4994cf",name:"ÃœMÄ°T KAZAK",taxNo:"5410421383",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ÃœMÄ°T KAZAK - TCKN: 47848340288"},
+  {id:"61d35756b2184cb",name:"ÃœNAL DURMAZ",taxNo:"3160695876",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ÃœNAL - TCKN: 26321058186"},
+  {id:"83eecf85b0f6411",name:"VÄ°LDAN ALTIOK",taxNo:"0650698847",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: VÄ°LDAN - TCKN: 46885388246"},
+  {id:"571701de4a3844f",name:"YASEMÄ°N Ã‡EVÄ°K",taxNo:"2490687183",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: YASEMÄ°N - TCKN: 41053566808"},
+  {id:"21bcbe8204bd454",name:"YÃœKSEL YAYLA",taxNo:"9430131964",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: YAYLA - TCKN: 46201395460"},
+  {id:"87afb8b6ddd840c",name:"HAKKI ZANGAL",taxNo:"9960035117",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ZANGAL - TCKN: 27104031716"},
+  {id:"b66bbff086c84cc",name:"ZEYNEP KARACA",taxNo:"8050626116",taxOffice:"KÄ°RAZ VERGÄ° DAÄ°RESÄ°",phone:"",email:"",notes:"KÄ±sa Ad: ZEYNEP - TCKN: 45430421384"}
+];
+const DEFAULT_DATA = { clients: DEFAULT_CLIENTS, declarations: [], news: DEFAULT_NEWS, payments: [], theme: 'light', notifEnabled: false, soundEnabled: false, _meta: { created: new Date().toISOString(), version: 3 } };
+
+let data = loadData();
+let currentPage = 'dashboard';
+let calendarDate = new Date();
+let chartInstance = null;
+let monthChartInstance = null;
+let yearlyChartInstance = null;
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (!d.clients) d.clients = [];
+      if (!d.declarations) d.declarations = [];
+      if (!d.news) d.news = [];
+      if (!d.payments) d.payments = [];
+      if (d.notifEnabled === undefined) d.notifEnabled = false;
+      if (d.soundEnabled === undefined) d.soundEnabled = false;
+      if (!d._meta) d._meta = { created: new Date().toISOString(), version: 3 };
+      return d;
+    }
+  } catch(e) { console.error('Load error:', e); }
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+
+function saveData() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  catch(e) { console.error('Save error:', e); showToast('Veri kaydedilemedi!', 'danger'); }
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
+
+function getClient(id) { return data.clients.find(c => c.id === id); }
+
+function getStats() {
+  const today = new Date();
+  const submitted = data.declarations.filter(d => d.status === 'submitted').length;
+  const pending = data.declarations.filter(d => d.status === 'pending').length;
+  const late = data.declarations.filter(d => (d.status === 'pending' || d.status === 'late') && new Date(d.dueDate) < today).length;
+  return { totalClients: data.clients.length, submitted, pending, late };
+}
+
+function showPage(page) {
+  document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector('.nav-item[data-page="' + page + '"]').classList.add('active');
+  const titles = { dashboard: 'Panel', clients: 'MÃ¼kellefler', declarations: 'Beyannameler', calendar: 'Takvim', news: 'Haberler', settings: 'Ayarlar' };
+  document.getElementById('pageTitle').textContent = titles[page] || 'Panel';
+  currentPage = page;
+  if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('show');
+  if (page === 'dashboard') renderDashboard();
+  else if (page === 'clients') renderClients();
+  else if (page === 'declarations') renderDeclarations();
+  else if (page === 'calendar') renderCalendar();
+  else if (page === 'news') fetchNews();
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
+
+// ========== TOAST ==========
+function showToast(msg, type = 'info') {
+  const icons = { success: 'bi-check-circle-fill', danger: 'bi-exclamation-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+  const colors = { success: '#1e7e34', danger: '#c5221f', warning: '#a86800', info: '#1a73e8' };
+  const el = document.createElement('div');
+  el.className = 'toast align-items-center border-0 show';
+  el.innerHTML = '<div class="d-flex"><div class="toast-body" style="display:flex;align-items:center;gap:8px;font-size:14px;padding:10px 14px;"><i class="bi ' + (icons[type] || icons.info) + '" style="color:' + (colors[type] || colors.info) + ';font-size:18px;"></i>' + msg + '</div><button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+  document.querySelector('.toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ========== DASHBOARD ==========
+function renderDashboard() {
+  const stats = getStats();
+  const total = stats.submitted + stats.pending + stats.late;
+  const completionRate = total > 0 ? Math.round((stats.submitted / total) * 100) : 0;
+  document.getElementById('statClients').textContent = stats.totalClients;
+  document.getElementById('statSubmitted').textContent = stats.submitted;
+  document.getElementById('statPending').textContent = stats.pending;
+  document.getElementById('statLate').textContent = stats.late;
+  document.getElementById('statCompletionRate').innerHTML = '%' + completionRate + '<span style="font-size:11px;font-weight:400;color:#888;display:block;">' + stats.submitted + '/' + total + '</span>';
+
+  // This month declarations count
+  const now = new Date();
+  const thisMonth = now.getMonth() + 1;
+  const thisYear = now.getFullYear();
+  const thisMonthDecls = data.declarations.filter(d => {
+    if (d.type === 'KDV' || d.type === 'Muhtasar') return d.period === thisMonth && d.year === thisYear;
+    if (d.type === 'GeÃ§ici Vergi') { const q = thisMonth <= 3 ? 1 : thisMonth <= 6 ? 4 : thisMonth <= 9 ? 7 : 10; return d.period === q && d.year === thisYear; }
+    return d.year === thisYear;
+  }).length;
+  document.getElementById('statMonthDecls').textContent = thisMonthDecls;
+
+  // Upcoming
+  const today = new Date();
+  const upcoming = data.declarations.filter(d => {
+    if (d.status !== 'pending') return false;
+    const due = new Date(d.dueDate);
+    return due >= today && due <= new Date(today.getTime() + 30*24*60*60*1000);
+  }).sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+  const ul = document.getElementById('upcomingList');
+  if (upcoming.length === 0) {
+    ul.innerHTML = '<div class="text-center py-4 text-muted small">YaklaÅŸan teslim yok</div>';
+  } else {
+    ul.innerHTML = upcoming.slice(0, 10).map(d => {
+      const c = getClient(d.clientId);
+      const due = new Date(d.dueDate);
+      const days = Math.ceil((due - today) / 86400000);
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;">' +
+        '<div style="width:36px;height:36px;border-radius:8px;background:' + (days <= 7 ? '#fce8e6' : '#e8f0fe') + ';display:flex;align-items:center;justify-content:center;color:' + (days <= 7 ? '#c5221f' : '#1a73e8') + ';font-weight:700;font-size:11px;flex-shrink:0;">' + days + 'g</div>' +
+        '<div style="flex:1;min-width:0;"><div class="fw-semibold small">' + (c ? c.name : '?') + '</div><div class="text-muted" style="font-size:11px;">' + d.type + ' &middot; ' + (d.periodName || d.period) + '</div></div>' +
+        (days <= 3 ? '<span class="status-badge status-late" style="font-size:9px;padding:1px 6px;">ACÄ°L</span>' : '') +
+        '<div class="small fw-medium" style="color:' + (days <= 7 ? '#c5221f' : '#5f6368') + ';">' + due.toLocaleDateString('tr-TR') + '</div></div>';
+    }).join('');
+  }
+
+  // Declaration status table
+  const recent = [...data.declarations].sort((a,b) => {
+    const da = a.submitDate || a.dueDate, db = b.submitDate || b.dueDate;
+    return new Date(db) - new Date(da);
+  }).slice(0, 8);
+
+  const tb = document.getElementById('dashboardDeclarations');
+  if (recent.length === 0) {
+    tb.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">HenÃ¼z beyanname eklenmemiÅŸ</td></tr>';
+  } else {
+    tb.innerHTML = recent.map(d => {
+      const c = getClient(d.clientId);
+      const sc = d.status === 'submitted' ? 'status-submitted' : d.status === 'late' ? 'status-late' : 'status-pending';
+      const st = d.status === 'submitted' ? 'Verildi' : d.status === 'late' ? 'GecikmiÅŸ' : 'Bekliyor';
+      return '<tr><td class="fw-medium"><span style="cursor:pointer;color:#1a73e8;" onclick="openClientDetail(\'' + d.clientId + '\')">' + (c ? c.name : '?') + '</span></td><td>' + d.type + '</td><td>' + (d.periodName || d.period) + '</td><td>' + new Date(d.dueDate).toLocaleDateString('tr-TR') + '</td><td><span class="status-badge ' + sc + '">' + st + '</span></td><td>' +
+        (d.status !== 'submitted' ? '<button class="btn btn-sm btn-success btn-icon" onclick="markAsSubmitted(\'' + d.id + '\')" title="Verildi"><i class="bi bi-check-lg"></i></button>' : '') + '</td></tr>';
+    }).join('');
+  }
+
+  // Top clients by declaration count
+  const clientCounts = {};
+  data.declarations.forEach(d => {
+    if (!clientCounts[d.clientId]) clientCounts[d.clientId] = 0;
+    clientCounts[d.clientId]++;
+  });
+  const topClients = Object.entries(clientCounts)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 5);
+  const tcEl = document.getElementById('topClientsList');
+  const colors2 = ['#1a73e8','#1e7e34','#a86800','#7b1fa2','#00897b'];
+  if (topClients.length === 0) {
+    tcEl.innerHTML = '<div class="text-center py-4 text-muted small">HenÃ¼z veri yok</div>';
+  } else {
+    const maxCount = topClients[0][1];
+    tcEl.innerHTML = topClients.map(([id, cnt], i) => {
+      const c = getClient(id);
+      const pct = maxCount > 0 ? (cnt / maxCount) * 100 : 0;
+      return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f0f0f0;">' +
+        '<div style="width:22px;height:22px;border-radius:50%;background:' + colors2[i] + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:10px;flex-shrink:0;">' + (i+1) + '</div>' +
+        '<div style="flex:1;min-width:0;"><div class="small fw-medium" style="cursor:pointer;color:#1a73e8;" onclick="openClientDetail(\'' + id + '\')">' + (c ? c.name : '?') + '</div></div>' +
+        '<div style="width:80px;"><div style="height:6px;background:#e0e0e0;border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + colors2[i] + ';border-radius:3px;"></div></div></div>' +
+        '<span class="fw-bold small" style="color:' + colors2[i] + ';">' + cnt + '</span></div>';
+    }).join('');
+  }
+
+  // Tag distribution
+  const tagCounts = { 'Ã–ncelikli':0, 'Yeni':0, 'DÃ¼zenli':0, 'Ä°letiÅŸim Bekliyor':0, 'Etiketsiz':0 };
+  data.clients.forEach(c => {
+    if (c.tag && tagCounts[c.tag] !== undefined) tagCounts[c.tag]++;
+    else tagCounts['Etiketsiz']++;
+  });
+  const tagColors = { 'Ã–ncelikli':'#c5221f', 'Yeni':'#1a73e8', 'DÃ¼zenli':'#1e7e34', 'Ä°letiÅŸim Bekliyor':'#a86800', 'Etiketsiz':'#9e9e9e' };
+  const tdEl = document.getElementById('tagDistribution');
+  if (data.clients.length === 0) {
+    tdEl.innerHTML = '<div class="text-center py-4 text-muted small">HenÃ¼z veri yok</div>';
+  } else {
+    const maxTag = Math.max(...Object.values(tagCounts), 1);
+    tdEl.innerHTML = Object.entries(tagCounts).map(([tag, cnt]) => {
+      const pct = Math.round((cnt / data.clients.length) * 100);
+      const barPct = (cnt / maxTag) * 100;
+      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0;">' +
+        '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (tagColors[tag] || '#9e9e9e') + ';flex-shrink:0;"></span>' +
+        '<span class="small" style="flex:1;">' + tag + '</span>' +
+        '<div style="width:100px;"><div style="height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden;"><div style="height:100%;width:' + barPct + '%;background:' + (tagColors[tag] || '#9e9e9e') + ';border-radius:4px;"></div></div></div>' +
+        '<span class="fw-bold small">' + cnt + ' (' + pct + '%)</span></div>';
+    }).join('');
+  }
+
+  // Doughnut Chart
+  try {
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+    const canvas = document.getElementById('statusChart');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      const stats2 = getStats();
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Verildi', 'GÃ¶nderilecek', 'GecikmiÅŸ'],
+          datasets: [{
+            data: [stats2.submitted, stats2.pending, stats2.late],
+            backgroundColor: ['#1e7e34', '#a86800', '#c5221f'],
+            borderWidth: 0
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+      });
+    }
+  } catch(e) { console.warn('Chart error:', e); }
+
+  // Monthly Bar Chart
+  try {
+    if (monthChartInstance) { monthChartInstance.destroy(); monthChartInstance = null; }
+    const mCanvas = document.getElementById('monthChart');
+    if (mCanvas) {
+      const mCtx = mCanvas.getContext('2d');
+      const monthStats = { 'KDV':0, 'Muhtasar':0, 'GeÃ§ici Vergi':0, 'Kurumlar Vergisi':0, 'Gelir Vergisi':0 };
+      data.declarations.forEach(d => { if (monthStats[d.type] !== undefined) monthStats[d.type]++; });
+      monthChartInstance = new Chart(mCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(monthStats),
+          datasets: [{
+            data: Object.values(monthStats),
+            backgroundColor: ['#1a73e8','#a86800','#1e7e34','#7b1fa2','#c5221f'],
+            borderRadius: 4,
+            borderSkipped: false
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      });
+    }
+  } catch(e) { console.warn('Bar chart error:', e); }
+
+  // Countdown + bu ay durumu
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const daysLeft = Math.ceil((lastDay - now) / 86400000);
+  document.getElementById('monthCountdown').textContent = daysLeft;
+
+  const thisMonthPending = data.declarations.filter(d => {
+    if (d.status === 'submitted') return false;
+    const due = new Date(d.dueDate);
+    return due.getFullYear() === now.getFullYear() && due.getMonth() === now.getMonth();
+  }).length;
+  document.getElementById('monthPendingCount').textContent = thisMonthPending + ' adet bekleyen';
+
+  const thisMonthSubmitted = data.declarations.filter(d => {
+    if (d.status !== 'submitted') return false;
+    const due = new Date(d.dueDate);
+    return due.getFullYear() === now.getFullYear() && due.getMonth() === now.getMonth();
+  }).length;
+  document.getElementById('monthSubmittedCount').textContent = thisMonthSubmitted + ' adet verildi';
+
+  // Monthly declarations list
+  const monthly = data.declarations.filter(d => d.year === thisYear && d.period === thisMonth && (d.type === 'KDV' || d.type === 'Muhtasar'))
+    .concat(data.declarations.filter(d => {
+      if (d.type === 'GeÃ§ici Vergi') { const q = thisMonth <= 3 ? 1 : thisMonth <= 6 ? 4 : thisMonth <= 9 ? 7 : 10; return d.period === q && d.year === thisYear; }
+      return false;
+    }));
+  const mEl = document.getElementById('monthlyDecls');
+  if (monthly.length === 0) {
+    mEl.innerHTML = '<div class="text-center py-4 text-muted small">Bu ay beyanname bulunmuyor</div>';
+  } else {
+    mEl.innerHTML = monthly.map(d => {
+      const c = getClient(d.clientId);
+      const sc = d.status === 'submitted' ? 'status-submitted' : d.status === 'late' ? 'status-late' : 'status-pending';
+      const st = d.status === 'submitted' ? 'Verildi' : d.status === 'late' ? 'GecikmiÅŸ' : 'Bekliyor';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;"><span class="fw-medium" style="flex:1;cursor:pointer;color:#1a73e8;" onclick="openClientDetail(\'' + d.clientId + '\')">' + (c ? c.name : '?') + '</span><span>' + d.type + '</span><span class="status-badge ' + sc + '" style="font-size:10px;padding:2px 8px;">' + st + '</span>' +
+        (d.status !== 'submitted' ? '<button class="btn btn-sm btn-success btn-icon" style="width:26px;height:26px;font-size:10px;" onclick="markAsSubmitted(\'' + d.id + '\')" title="Verildi"><i class="bi bi-check-lg"></i></button>' : '') + '</div>';
+    }).join('');
+  }
+
+  updateBadge();
+
+  // Yearly comparison
+  renderYearlyComparison();
+}
+
+// ========== CLIENTS ==========
+function renderClients() {
+  const search = (document.getElementById('clientSearch').value || '').toLowerCase();
+  const filter = document.getElementById('clientFilter').value;
+  const tagFilter = document.getElementById('clientTagFilter').value;
+  let list = [...data.clients];
+  if (search) list = list.filter(c => c.name.toLowerCase().includes(search) || (c.taxNo && c.taxNo.includes(search)));
+  if (filter === 'with-pending') { const ids = new Set(data.declarations.filter(d => d.status === 'pending').map(d => d.clientId)); list = list.filter(c => ids.has(c.id)); }
+  if (filter === 'with-late') { const ids = new Set(data.declarations.filter(d => (d.status === 'pending' || d.status === 'late') && new Date(d.dueDate) < new Date()).map(d => d.clientId)); list = list.filter(c => ids.has(c.id)); }
+  if (tagFilter !== 'all') list = list.filter(c => c.tag === tagFilter);
+  document.getElementById('clientsCount').textContent = '(' + data.clients.length + ' kayÄ±t)';
+  const tb = document.getElementById('clientsTableBody');
+  if (list.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-people fs-1 d-block mb-2"></i>MÃ¼kellef bulunamadÄ±</td></tr>'; return; }
+
+  if (clientViewMode === 'card') {
+    const tagColors = { 'Ã–ncelikli': '#c5221f', 'Yeni': '#1a73e8', 'DÃ¼zenli': '#1e7e34', 'Ä°letiÅŸim Bekliyor': '#a86800' };
+    tb.innerHTML = '<div class="client-card">' + list.map(c => {
+      const decls = data.declarations.filter(d => d.clientId === c.id);
+      const pendingCnt = decls.filter(d => d.status === 'pending').length;
+      const lateCnt = decls.filter(d => (d.status === 'pending' || d.status === 'late') && new Date(d.dueDate) < new Date()).length;
+      const perf = getPerformanceScore(c.id);
+      const tag = c.tag ? '<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;color:#fff;background:' + (tagColors[c.tag] || '#5f6368') + ';">' + c.tag + '</span>' : '';
+      return '<div class="card-item" onclick="openClientDetail(\'' + c.id + '\')"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:36px;height:36px;border-radius:50%;background:#1a73e8;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;">' + c.name.charAt(0).toUpperCase() + '</div><div style="flex:1;"><div class="fw-semibold">' + c.name + '</div><div class="text-muted" style="font-size:11px;">' + (c.taxOffice || '') + ' ' + tag + '</div></div><div style="text-align:right;"><div style="font-weight:700;font-size:16px;color:' + perf.color + ';">%' + perf.score + '</div><div style="font-size:9px;color:' + perf.color + ';">' + perf.label + '</div></div></div><div style="display:flex;gap:10px;font-size:11px;"><span>' + (c.taxNo || '-') + '</span><span>' + (c.phone || '-') + '</span><span class="' + (pendingCnt > 0 ? 'status-pending' : '') + '" style="' + (pendingCnt > 0 ? 'padding:1px 6px;border-radius:8px;font-weight:600;' : '') + '">' + (pendingCnt > 0 ? pendingCnt + ' bek' : '') + '</span><span class="' + (lateCnt > 0 ? 'status-late' : '') + '" style="' + (lateCnt > 0 ? 'padding:1px 6px;border-radius:8px;font-weight:600;' : '') + '">' + (lateCnt > 0 ? lateCnt + ' gecik' : '') + '</span></div><div style="margin-top:8px;display:flex;gap:4px;"><button class="btn btn-sm btn-outline-primary btn-icon" style="padding:0 6px;height:24px;font-size:10px;" onclick="event.stopPropagation();openClientModal(\'' + c.id + '\')" title="DÃ¼zenle"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger btn-icon" style="padding:0 6px;height:24px;font-size:10px;" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\')" title="Sil"><i class="bi bi-trash"></i></button></div></div>';
+    }).join('') + '</div>';
+    return;
+  }
+
+  const colors = ['#1a73e8','#1e7e34','#a86800','#c5221f','#7b1fa2','#00897b'];
+  const tagColors = { 'Ã–ncelikli': '#c5221f', 'Yeni': '#1a73e8', 'DÃ¼zenli': '#1e7e34', 'Ä°letiÅŸim Bekliyor': '#a86800' };
+  tb.innerHTML = list.map(c => {
+    const decls = data.declarations.filter(d => d.clientId === c.id);
+    const pendingCnt = decls.filter(d => d.status === 'pending').length;
+    const lateCnt = decls.filter(d => (d.status === 'pending' || d.status === 'late') && new Date(d.dueDate) < new Date()).length;
+    const initial = c.name.charAt(0).toUpperCase();
+    const color = colors[c.name.length % colors.length];
+    const tagHtml = c.tag ? '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:#fff;background:' + (tagColors[c.tag] || '#5f6368') + ';">' + c.tag + '</span>' : '<span class="text-muted" style="font-size:11px;">-</span>';
+    return '<tr><td><div style="display:flex;align-items:center;gap:8px;"><div style="width:32px;height:32px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;">' + initial + '</div><div><div class="fw-semibold small" style="cursor:pointer;color:#1a73e8;" onclick="openClientDetail(\'' + c.id + '\')">' + c.name + '</div><div class="text-muted" style="font-size:11px;">' + (c.taxOffice || '-') + '</div></div></div></td><td>' + tagHtml + '</td><td class="small">' + (c.taxNo || '-') + '</td><td class="small">' + (c.taxOffice || '-') + '</td><td class="small">' + (c.phone || '-') + '</td><td>' + (pendingCnt > 0 ? '<span class="status-badge status-pending" style="font-size:10px;">' + pendingCnt + ' bekleyen</span> ' : '') + (lateCnt > 0 ? '<span class="status-badge status-late" style="font-size:10px;">' + lateCnt + ' gecikmiÅŸ</span>' : '<span class="text-muted" style="font-size:11px;">-</span>') + '</td><td><button class="btn btn-sm btn-outline-primary btn-icon me-1" onclick="openClientModal(\'' + c.id + '\')" title="DÃ¼zenle"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger btn-icon" onclick="deleteClient(\'' + c.id + '\')" title="Sil"><i class="bi bi-trash"></i></button></td></tr>';
+  }).join('');
+}
+
+function openClientModal(id) {
+  const c = id ? getClient(id) : null;
+  document.getElementById('clientModalTitle').textContent = c ? 'MÃ¼kellef DÃ¼zenle' : 'Yeni MÃ¼kellef';
+  document.getElementById('clientId').value = c ? c.id : '';
+  document.getElementById('clientName').value = c ? c.name : '';
+  document.getElementById('clientTaxNo').value = c ? (c.taxNo || '') : '';
+  document.getElementById('clientTaxOffice').value = c ? (c.taxOffice || '') : '';
+  document.getElementById('clientPhone').value = c ? (c.phone || '') : '';
+  document.getElementById('clientEmail').value = c ? (c.email || '') : '';
+  document.getElementById('clientTag').value = c ? (c.tag || '') : '';
+  document.getElementById('clientNotes').value = c ? (c.notes || '') : '';
+  new bootstrap.Modal(document.getElementById('clientModal')).show();
+}
+
+function saveClient() {
+  const name = document.getElementById('clientName').value.trim();
+  if (!name) { showToast('Ad Soyad zorunludur!', 'danger'); return; }
+  const id = document.getElementById('clientId').value;
+  const obj = { name, taxNo: document.getElementById('clientTaxNo').value.trim(), taxOffice: document.getElementById('clientTaxOffice').value.trim(), phone: document.getElementById('clientPhone').value.trim(), email: document.getElementById('clientEmail').value.trim(), tag: document.getElementById('clientTag').value, notes: document.getElementById('clientNotes').value.trim() };
+  if (id) { const idx = data.clients.findIndex(c => c.id === id); if (idx !== -1) data.clients[idx] = { ...data.clients[idx], ...obj }; }
+  else { obj.id = genId(); data.clients.push(obj); }
+  saveData();
+  bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide();
+  renderClients(); renderDashboard();
+  populateClientSelects();
+  showToast(id ? 'GÃ¼ncellendi' : 'Eklendi', 'success');
+}
+
+function deleteClient(id) {
+  if (!confirm('Silmek istediÄŸinize emin misiniz?')) return;
+  data.clients = data.clients.filter(c => c.id !== id);
+  data.declarations = data.declarations.filter(d => d.clientId !== id);
+  saveData();
+  renderClients(); renderDashboard();
+  populateClientSelects();
+  showToast('Silindi', 'success');
+}
+
+function openClientDetail(id) {
+  const c = getClient(id);
+  if (!c) return;
+  document.getElementById('clientDetailTitle').textContent = c.name;
+  document.getElementById('detailClientId').value = id;
+  document.getElementById('detailTaxNo').textContent = c.taxNo || '-';
+  document.getElementById('detailTaxOffice').textContent = c.taxOffice || '-';
+  document.getElementById('detailPhone').textContent = c.phone || '-';
+  document.getElementById('detailEmail').textContent = c.email || '-';
+  document.getElementById('detailNotes').textContent = c.notes || '-';
+  const decls = data.declarations.filter(d => d.clientId === id).sort((a,b) => new Date(b.dueDate) - new Date(a.dueDate));
+  const tb = document.getElementById('detailDeclarations');
+  if (decls.length === 0) {
+    tb.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Beyanname bulunmuyor</td></tr>';
+  } else {
+    tb.innerHTML = decls.map(d => {
+      const sc = d.status === 'submitted' ? 'status-submitted' : d.status === 'late' ? 'status-late' : 'status-pending';
+      const st = d.status === 'submitted' ? 'Verildi' : d.status === 'late' ? 'GecikmiÅŸ' : 'Bekliyor';
+      return '<tr><td>' + d.type + '</td><td>' + (d.periodName || d.period) + '</td><td>' + d.year + '</td><td>' + new Date(d.dueDate).toLocaleDateString('tr-TR') + '</td><td><span class="status-badge ' + sc + '">' + st + '</span></td></tr>';
+    }).join('');
+  }
+  new bootstrap.Modal(document.getElementById('clientDetailModal')).show();
+}
+
+function printClientReport() {
+  const cid = document.getElementById('clientDetailTitle').textContent;
+  const c = data.clients.find(x => x.name === cid);
+  if (!c) return;
+  const decls = data.declarations.filter(d => d.clientId === c.id);
+  let html = '<html><head><meta charset="utf-8"><title>' + c.name + ' - Rapor</title><style>body{font-family:Arial;padding:20px;font-size:13px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:8px;text-align:left;}th{background:#f5f5f5;}h1{font-size:18px;}</style></head><body>';
+  html += '<h1>' + c.name + '</h1>';
+  html += '<p><strong>Vergi No:</strong> ' + (c.taxNo || '-') + ' | <strong>Vergi Dairesi:</strong> ' + (c.taxOffice || '-') + ' | <strong>Telefon:</strong> ' + (c.phone || '-') + '</p>';
+  html += '<h2>Beyannameler</h2><table><thead><tr><th>TÃ¼r</th><th>DÃ¶nem</th><th>YÄ±l</th><th>Son Teslim</th><th>Durum</th></tr></thead><tbody>';
+  decls.forEach(d => {
+    const st = d.status === 'submitted' ? 'Verildi' : d.status === 'late' ? 'GecikmiÅŸ' : 'Bekliyor';
+    html += '<tr><td>' + d.type + '</td><td>' + (d.periodName || d.period) + '</td><td>' + d.year + '</td><td>' + new Date(d.dueDate).toLocaleDateString('tr-TR') + '</td><td>' + st + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '<p style="margin-top:20px;color:#888;font-size:11px;">BeyanTakip - ' + new Date().toLocaleDateString('tr-TR') + '</p>';
+  html += '</body></html>';
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  w.print();
+}
+
+function importClientsCSV() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.csv';
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const text = ev.target.result;
+        const lines = text.split('\n').filter(l => l.trim());
+        if (lines.length < 2) { showToast('CSV en az 2 satÄ±r olmalÄ± (baÅŸlÄ±k + veri)', 'danger'); return; }
+        const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
+        let count = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const vals = lines[i].split(';').map(v => v.trim());
+          const name = vals[headers.indexOf('ad')] || vals[headers.indexOf('ad soyad')] || vals[headers.indexOf('unvan')] || '';
+          if (!name) continue;
+          const taxNo = vals[headers.indexOf('vergi no')] || vals[headers.indexOf('vkn')] || '';
+          const taxOffice = vals[headers.indexOf('vergi dairesi')] || '';
+          const phone = vals[headers.indexOf('telefon')] || vals[headers.indexOf('tel')] || '';
+          const email = vals[headers.indexOf('e-posta')] || vals[headers.indexOf('email')] || '';
+          data.clients.push({ id: genId(), name, taxNo, taxOffice, phone, email, tag: '', notes: '' });
+          count++;
+        }
+        saveData();
+        renderClients();
+        populateClientSelects();
+        showToast(count + ' mÃ¼kellef iÃ§e aktarÄ±ldÄ±', 'success');
+      } catch(err) { showToast('CSV okunamadÄ±: ' + err.message, 'danger'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+  input.click();
+}
+
+// ========== PAYMENTS ==========
+function openPaymentModal(clientId) {
+  document.getElementById('paymentClientId').value = clientId || '';
+  document.getElementById('paymentAmount').value = '';
+  document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('paymentNote').value = '';
+  new bootstrap.Modal(document.getElementById('paymentModal')).show();
+}
+
+function savePayment() {
+  const clientId = document.getElementById('paymentClientId').value;
+  const amount = parseFloat(document.getElementById('paymentAmount').value);
+  const date = document.getElementById('paymentDate').value;
+  const note = document.getElementById('paymentNote').value.trim();
+  if (!amount || amount <= 0) { showToast('GeÃ§erli bir tutar girin!', 'danger'); return; }
+  if (!data.payments) data.payments = [];
+  data.payments.push({ id: genId(), clientId, amount, date, note, createdAt: new Date().toISOString() });
+  saveData();
+  bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+  renderPayments();
+  showToast('Ã–deme kaydedildi', 'success');
+}
+
+function renderPayments() {
+  const container = document.getElementById('paymentsList');
+  const payments = data.payments || [];
+  if (payments.length === 0) {
+    container.innerHTML = '<p class="small text-muted mb-0">HiÃ§ Ã¶deme kaydÄ± yok.</p>';
+    return;
+  }
+  const sorted = [...payments].sort((a,b) => new Date(b.date) - new Date(a.date));
+  let total = 0;
+  container.innerHTML = sorted.map(p => {
+    const c = getClient(p.clientId);
+    total += p.amount;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;">' +
+      '<div style="flex:1;"><span class="fw-medium">' + (c ? c.name : '?') + '</span>' +
+      (p.note ? '<span class="text-muted" style="font-size:11px;display:block;">' + p.note + '</span>' : '') + '</div>' +
+      '<span style="font-weight:700;color:#1e7e34;">' + p.amount.toFixed(2) + ' TL</span>' +
+      '<span class="text-muted" style="font-size:11px;">' + new Date(p.date).toLocaleDateString('tr-TR') + '</span>' +
+      '<button class="btn btn-sm btn-outline-danger btn-icon" onclick="deletePayment(\'' + p.id + '\')" title="Sil"><i class="bi bi-trash"></i></button></div>';
+  }).join('');
+  container.innerHTML += '<div class="mt-2 text-end fw-bold small">Toplam: ' + total.toFixed(2) + ' TL</div>';
+}
+
+function deletePayment(id) {
+  if (!confirm('Ã–deme kaydÄ±nÄ± sil?')) return;
+  data.payments = data.payments.filter(p => p.id !== id);
+  saveData();
+  renderPayments();
+  showToast('Ã–deme silindi', 'success');
+}
+
+// ========== NOTIFICATIONS ==========
+function toggleNotifications() {
+  const enabled = document.getElementById('notifToggle').checked;
+  data.notifEnabled = enabled;
+  saveData();
+  if (enabled) {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    showToast('Bildirimler ' + (enabled ? 'aÃ§Ä±ldÄ±' : 'kapatÄ±ldÄ±'), 'success');
+  }
+}
+
+function checkNotifications() {
+  if (!data.notifEnabled) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const today = new Date();
+  const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const upcoming = data.declarations.filter(d => {
+    if (d.status !== 'pending') return false;
+    const due = new Date(d.dueDate);
+    return due > today && due <= weekFromNow;
+  });
+  if (upcoming.length > 0) {
+    const clients = [...new Set(upcoming.map(d => { const c = getClient(d.clientId); return c ? c.name : '?'; }))];
+    new Notification('BeyanTakip - YaklaÅŸan Teslimler', {
+      body: upcoming.length + ' beyanname iÃ§in ' + clients.length + ' mÃ¼kellef teslim yapmalÄ±.',
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" rx="3" fill="%231a73e8"/><text x="8" y="12" text-anchor="middle" fill="white" font-size="10" font-weight="bold">B</text></svg>'
+    });
+  }
+}
+
+// ========== DECLARATIONS ==========
+function populateClientSelects() {
+  ['declClient','declClientFilter'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    if (id === 'declClientFilter') sel.innerHTML = '<option value="all">TÃ¼m MÃ¼kellefler</option>';
+    else sel.innerHTML = '';
+    data.clients.forEach(c => sel.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>');
+    if (cur) sel.value = cur;
+  });
+}
+
+function updatePeriodOptions() {
+  const type = document.getElementById('declType').value;
+  const info = DECL_TYPES[type];
+  const sel = document.getElementById('declPeriod');
+  sel.innerHTML = info.periods.map(p => '<option value="' + p + '">' + (type === 'GeÃ§ici Vergi' ? QNAMES[p] : type === 'Kurumlar Vergisi' || type === 'Gelir Vergisi' ? 'YÄ±llÄ±k' : MONTHS[p]) + '</option>').join('');
+  updateDueDate();
+}
+
+function updateDueDate() {
+  const type = document.getElementById('declType').value;
+  const period = parseInt(document.getElementById('declPeriod').value);
+  const year = parseInt(document.getElementById('declYear').value);
+  const info = DECL_TYPES[type];
+  if (info && info.dueDate && period) document.getElementById('declDueDate').value = info.dueDate(year, period);
+}
+
+function openDeclarationModal(id) {
+  const d = id ? data.declarations.find(x => x.id === id) : null;
+  document.getElementById('declModalTitle').textContent = d ? 'Beyanname DÃ¼zenle' : 'Yeni Beyanname';
+  document.getElementById('declId').value = d ? d.id : '';
+  const ySel = document.getElementById('declYear');
+  const cy = new Date().getFullYear();
+  ySel.innerHTML = [cy-1, cy, cy+1].map(y => '<option value="' + y + '">' + y + '</option>').join('');
+  populateClientSelects();
+  if (d) { document.getElementById('declClient').value = d.clientId; document.getElementById('declType').value = d.type; updatePeriodOptions(); document.getElementById('declPeriod').value = d.period; document.getElementById('declYear').value = d.year; document.getElementById('declDueDate').value = d.dueDate; document.getElementById('declSubmitDate').value = d.submitDate || ''; document.getElementById('declStatus').value = d.status; }
+  else { updatePeriodOptions(); document.getElementById('declSubmitDate').value = ''; document.getElementById('declStatus').value = 'pending'; }
+  new bootstrap.Modal(document.getElementById('declModal')).show();
+}
+
+function saveDeclaration() {
+  const clientId = document.getElementById('declClient').value;
+  const type = document.getElementById('declType').value;
+  const period = document.getElementById('declPeriod').value;
+  const year = document.getElementById('declYear').value;
+  const dueDate = document.getElementById('declDueDate').value;
+  const submitDate = document.getElementById('declSubmitDate').value;
+  const status = document.getElementById('declStatus').value;
+  if (!clientId) { showToast('MÃ¼kellef seÃ§in!', 'danger'); return; }
+  if (!dueDate) { showToast('Tarih zorunlu!', 'danger'); return; }
+  const months = ['','Ocak','Åubat','Mart','Nisan','MayÄ±s','Haziran','Temmuz','AÄŸustos','EylÃ¼l','Ekim','KasÄ±m','AralÄ±k'];
+  let pn = period;
+  if (type === 'KDV' || type === 'Muhtasar') pn = months[parseInt(period)];
+  else if (type === 'GeÃ§ici Vergi') pn = QNAMES[period] || period;
+  else pn = 'YÄ±llÄ±k';
+  const id = document.getElementById('declId').value;
+  const obj = { clientId, type, period: parseInt(period), year: parseInt(year), periodName: pn, dueDate, submitDate: submitDate || null, status };
+  if (id) { const idx = data.declarations.findIndex(x => x.id === id); if (idx !== -1) data.declarations[idx] = { ...data.declarations[idx], ...obj }; }
+  else { obj.id = genId(); data.declarations.push(obj); }
+  saveData();
+  bootstrap.Modal.getInstance(document.getElementById('declModal')).hide();
+  renderDeclarations(); renderDashboard(); populateYearFilter();
+  showToast(id ? 'GÃ¼ncellendi' : 'Eklendi', 'success');
+}
+
+function deleteDeclaration(id) {
+  if (!confirm('Silmek istediÄŸinize emin misiniz?')) return;
+  data.declarations = data.declarations.filter(d => d.id !== id);
+  saveData();
+  renderDeclarations(); renderDashboard();
+  showToast('Silindi', 'success');
+}
+
+function markAsSubmitted(id) {
+  const d = data.declarations.find(x => x.id === id);
+  if (!d) return;
+  d.submitDate = new Date().toISOString().split('T')[0];
+  d.status = 'submitted';
+  saveData();
+  renderDeclarations(); renderDashboard();
+  showToast(d.type + ' - ' + (d.periodName || d.period) + ' verildi olarak iÅŸaretlendi', 'success');
+}
+
+function renderDeclarations() {
+  const clientFilter = document.getElementById('declClientFilter')?.value || 'all';
+  const typeFilter = document.getElementById('declTypeFilter')?.value || 'all';
+  const statusFilter = document.getElementById('declStatusFilter')?.value || 'all';
+  const yearFilter = document.getElementById('declYearFilter')?.value || 'all';
+  let list = [...data.declarations];
+  if (clientFilter !== 'all') list = list.filter(d => d.clientId === clientFilter);
+  if (typeFilter !== 'all') list = list.filter(d => d.type === typeFilter);
+  if (statusFilter !== 'all') list = list.filter(d => d.status === statusFilter);
+  if (yearFilter !== 'all') list = list.filter(d => d.year === parseInt(yearFilter));
+  list.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
+  document.getElementById('declCount').textContent = '(' + list.length + ' kayÄ±t)';
+  const tb = document.getElementById('declarationsTableBody');
+  if (list.length === 0) { tb.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-file-earmark-text fs-1 d-block mb-2"></i>Beyanname bulunamadÄ±</td></tr>'; document.getElementById('selectAllDecls').checked = false; updateBulkActions(); return; }
+  tb.innerHTML = list.map(d => {
+    const c = getClient(d.clientId);
+    const sc = d.status === 'submitted' ? 'status-submitted' : d.status === 'late' ? 'status-late' : 'status-pending';
+    const st = d.status === 'submitted' ? 'Verildi' : d.status === 'late' ? 'GecikmiÅŸ' : 'Bekliyor';
+    return '<tr data-id="' + d.id + '"><td class="text-center"><input type="checkbox" class="form-check-input decl-checkbox" value="' + d.id + '" onchange="updateBulkActions()"></td><td class="fw-medium">' + (c ? c.name : '?') + '</td><td>' + d.type + '</td><td>' + (d.periodName || d.period) + '</td><td>' + d.year + '</td><td>' + new Date(d.dueDate).toLocaleDateString('tr-TR') + '</td><td>' + (d.submitDate ? new Date(d.submitDate).toLocaleDateString('tr-TR') : '-') + '</td><td><span class="status-badge ' + sc + '">' + st + '</span></td><td style="white-space:nowrap;">' +
+      (d.status !== 'submitted' ? '<button class="btn btn-sm btn-success btn-icon me-1" onclick="markAsSubmitted(\'' + d.id + '\')" title="Verildi"><i class="bi bi-check-lg"></i></button>' : '') +
+      '<button class="btn btn-sm btn-outline-primary btn-icon me-1" onclick="openDeclarationModal(\'' + d.id + '\')" title="DÃ¼zenle"><i class="bi bi-pencil"></i></button>' +
+      '<button class="btn btn-sm btn-outline-danger btn-icon" onclick="deleteDeclaration(\'' + d.id + '\')" title="Sil"><i class="bi bi-trash"></i></button></td></tr>';
+  }).join('');
+  document.getElementById('selectAllDecls').checked = false;
+  updateBulkActions();
+  updateBadge();
+}
+
+// ===== BULK ACTIONS =====
+function updateBulkActions() {
+  const checked = document.querySelectorAll('.decl-checkbox:checked');
+  const count = checked.length;
+  const bar = document.getElementById('bulkActionsBar');
+  document.querySelectorAll('.decl-checkbox').forEach(cb => {
+    const tr = cb.closest('tr');
+    if (tr) tr.classList.toggle('selected', cb.checked);
+  });
+  if (count > 0) { bar.style.display = 'flex'; document.getElementById('bulkSelectedCount').textContent = count + ' seÃ§ili'; }
+  else { bar.style.display = 'none'; }
+}
+
+function toggleSelectAll(src) {
+  document.querySelectorAll('.decl-checkbox').forEach(cb => cb.checked = src.checked);
+  updateBulkActions();
+}
+
+function bulkMarkSubmitted() {
+  const ids = [...document.querySelectorAll('.decl-checkbox:checked')].map(cb => cb.value);
+  if (ids.length === 0) { showToast('SeÃ§ili yok', 'warning'); return; }
+  if (!confirm(ids.length + ' beyannameyi verildi olarak iÅŸaretle?')) return;
+  const today = new Date().toISOString().split('T')[0];
+  ids.forEach(id => { const d = data.declarations.find(x => x.id === id); if (d) { d.submitDate = today; d.status = 'submitted'; } });
+  saveData();
+  renderDeclarations(); renderDashboard();
+  showToast(ids.length + ' beyanname verildi', 'success');
+}
+
+function bulkDelete() {
+  const ids = [...document.querySelectorAll('.decl-checkbox:checked')].map(cb => cb.value);
+  if (ids.length === 0) { showToast('SeÃ§ili yok', 'warning'); return; }
+  if (!confirm(ids.length + ' beyannameyi sil?')) return;
+  data.declarations = data.declarations.filter(d => !ids.includes(d.id));
+  saveData();
+  renderDeclarations(); renderDashboard();
+  showToast(ids.length + ' beyanname silindi', 'success');
+}
+
+function clearSelection() {
+  document.querySelectorAll('.decl-checkbox').forEach(cb => cb.checked = false);
+  document.getElementById('selectAllDecls').checked = false;
+  updateBulkActions();
+}
+
+// ========== AUTO GENERATE ==========
+function generateAutoDeclarations() {
+  if (data.clients.length === 0) { showToast('Ã–nce mÃ¼kellef ekleyin!', 'warning'); return; }
+  const now = new Date(), year = now.getFullYear(), month = now.getMonth() + 1;
+  const quarter = month <= 3 ? 1 : month <= 6 ? 4 : month <= 9 ? 7 : 10;
+  const lastMonth = month === 1 ? 12 : month - 1;
+  const lastMonthYear = month === 1 ? year - 1 : year;
+  let count = 0;
+  data.clients.forEach(client => {
+    if (!data.declarations.some(d => d.clientId === client.id && d.type === 'KDV' && d.period === lastMonth && d.year === lastMonthYear)) {
+      const dd = DECL_TYPES['KDV'].dueDate(lastMonthYear, lastMonth);
+      data.declarations.push({ id: genId(), clientId: client.id, type: 'KDV', period: lastMonth, year: lastMonthYear, periodName: MONTHS[lastMonth], dueDate: dd, submitDate: null, status: 'pending' });
+      count++;
+    }
+    if (!data.declarations.some(d => d.clientId === client.id && d.type === 'Muhtasar' && d.period === lastMonth && d.year === lastMonthYear)) {
+      const dd = DECL_TYPES['Muhtasar'].dueDate(lastMonthYear, lastMonth);
+      data.declarations.push({ id: genId(), clientId: client.id, type: 'Muhtasar', period: lastMonth, year: lastMonthYear, periodName: MONTHS[lastMonth], dueDate: dd, submitDate: null, status: 'pending' });
+      count++;
+    }
+    if (!data.declarations.some(d => d.clientId === client.id && d.type === 'GeÃ§ici Vergi' && d.period === quarter && d.year === year)) {
+      const dd = DECL_TYPES['GeÃ§ici Vergi'].dueDate(year, quarter);
+      data.declarations.push({ id: genId(), clientId: client.id, type: 'GeÃ§ici Vergi', period: quarter, year, periodName: QNAMES[quarter], dueDate: dd, submitDate: null, status: 'pending' });
+      count++;
+    }
+  });
+  saveData();
+  renderDeclarations(); renderDashboard();
+  showToast(count + ' beyanname oluÅŸturuldu', 'success');
+}
+
+// ========== CALENDAR ==========
+function renderCalendar() {
+  const y = calendarDate.getFullYear(), m = calendarDate.getMonth();
+  document.getElementById('calendarMonthYear').textContent = new Date(y, m).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' });
+  const firstDay = new Date(y, m, 1).getDay();
+  const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const daysInPrev = new Date(y, m, 0).getDate();
+  const grid = document.getElementById('calendarGrid');
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  let html = '';
+  for (let i = startOffset - 1; i >= 0; i--) html += '<div class="cal-day other"><span>' + (daysInPrev - i) + '</span></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const isToday = ds === todayStr;
+    const isHoliday = TURKISH_HOLIDAYS.some(h => h.month === (m+1) && h.day === d);
+    const deadlines = data.declarations.filter(x => x.dueDate === ds && (x.status === 'pending' || x.status === 'late'));
+    const submitted = data.declarations.filter(x => x.submitDate === ds);
+    const upcoming = data.declarations.filter(x => x.dueDate === ds && x.status === 'pending' && new Date(x.dueDate) > today);
+    let dotsHtml = '';
+    if (isHoliday) dotsHtml += '<span class="dot-holiday"></span>';
+    if (deadlines.length > 0) dotsHtml += '<span class="dot-deadline"></span>';
+    if (submitted.length > 0) dotsHtml += '<span class="dot-submitted"></span>';
+    if (upcoming.length > 0 && deadlines.length === 0) dotsHtml += '<span class="dot-upcoming"></span>';
+    const badgeHtml = deadlines.length > 0 ? '<div class="count-badge deadline">' + deadlines.length + '</div>' : (submitted.length > 0 ? '<div class="count-badge submitted">' + submitted.length + '</div>' : '');
+    const holidayClass = isHoliday ? ' holiday' : '';
+    html += '<div class="cal-day' + (isToday ? ' today' : '') + holidayClass + '" onclick="selectCalendarDay(\'' + ds + '\')"><span>' + d + '</span>' + (dotsHtml ? '<div class="cal-dots">' + dotsHtml + '</div>' : '') + badgeHtml + '</div>';
+  }
+  const total = startOffset + daysInMonth;
+  const rem = (7 - (total % 7)) % 7;
+  for (let d = 1; d <= rem; d++) html += '<div class="cal-day other"><span>' + d + '</span></div>';
+  grid.innerHTML = html;
+  // Update selected day if showing
+  if (selectedCalendarDay) selectCalendarDay(selectedCalendarDay);
+}
+
+function changeMonth(delta) { calendarDate.setMonth(calendarDate.getMonth() + delta); renderCalendar(); }
+
+function goToday() { calendarDate = new Date(); renderCalendar(); selectCalendarDay(new Date().toISOString().split('T')[0]); }
+
+function selectCalendarDay(dateStr) {
+  selectedCalendarDay = dateStr;
+  const div = document.getElementById('selectedDayInfo');
+  const title = document.getElementById('selectedDayTitle');
+  const date = new Date(dateStr + 'T00:00:00');
+  const deadlines = data.declarations.filter(d => d.dueDate === dateStr && (d.status === 'pending' || d.status === 'late'));
+  const submitted = data.declarations.filter(d => d.submitDate === dateStr);
+  const holiday = TURKISH_HOLIDAYS.find(h => h.month === (date.getMonth()+1) && h.day === date.getDate());
+  title.textContent = date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  let html = '';
+  if (holiday) {
+    html += '<div class="mt-2 p-2" style="background:#f3e5f5;border-radius:8px;text-align:center;"><span style="color:#9c27b0;font-weight:600;font-size:13px;"><i class="bi bi-calendar-heart"></i> ' + holiday.name + '</span></div>';
+  }
+  if (deadlines.length > 0) {
+    html += '<div class="mt-2"><div class="fw-semibold small text-danger mb-1"><i class="bi bi-exclamation-circle"></i> Teslim Edilecekler (' + deadlines.length + ')</div>';
+    html += deadlines.map(d => {
+      const c = getClient(d.clientId);
+      const late = new Date(d.dueDate) < new Date();
+      return '<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;margin-bottom:4px;background:' + (late ? '#fce8e6' : '#fff8e1') + ';">' +
+        '<span class="status-badge ' + (late ? 'status-late' : 'status-pending') + '" style="font-size:10px;padding:2px 8px;">' + d.type + '</span>' +
+        '<span class="small" style="flex:1;">' + (c ? c.name : '?') + '</span>' +
+        '<button class="btn btn-sm btn-success" style="width:28px;height:28px;font-size:10px;padding:0;" onclick="markAsSubmitted(\'' + d.id + '\')" title="Verildi"><i class="bi bi-check-lg"></i></button></div>';
+    }).join('') + '</div>';
+  }
+  if (submitted.length > 0) {
+    html += '<div class="mt-2"><div class="fw-semibold small text-success mb-1"><i class="bi bi-check-circle"></i> Verilenler (' + submitted.length + ')</div>';
+    html += submitted.map(d => {
+      const c = getClient(d.clientId);
+      return '<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;margin-bottom:4px;background:#e6f4ea;">' +
+        '<span class="status-badge status-submitted" style="font-size:10px;padding:2px 8px;">' + d.type + '</span>' +
+        '<span class="small" style="flex:1;">' + (c ? c.name : '?') + '</span></div>';
+    }).join('') + '</div>';
+  }
+  if (deadlines.length === 0 && submitted.length === 0 && !holiday) html += '<div class="mt-3 text-center text-muted small py-3"><i class="bi bi-calendar-check fs-3 d-block mb-1"></i>Bu gÃ¼ne ait kayÄ±t yok</div>';
+  div.innerHTML = html;
+}
+
+// ========== NEWS ==========
+function timeAgo(dateStr) {
+  const now = new Date(), d = new Date(dateStr);
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'Az Ã¶nce';
+  if (diff < 3600) return Math.floor(diff / 60) + ' dk Ã¶nce';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' saat Ã¶nce';
+  if (diff < 604800) return Math.floor(diff / 86400) + ' gÃ¼n Ã¶nce';
+  return d.toLocaleDateString('tr-TR');
+}
+
+async function fetchNews() {
+  const container = document.getElementById('newsContainer');
+  container.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted small">Haberler yÃ¼kleniyor...</p></div>';
+  let fetched = false;
+
+  // TÃ¼m kaynaklarÄ± paralel dene, ilk baÅŸarÄ±lÄ± olanÄ± al
+  const sources = [
+    { url: 'https://newsapi.org/v2/everything?q=vergi+muhasebe+maliye&language=tr&sortBy=publishedAt&pageSize=20&apiKey=05b0d2fc72d44a88803a9e33e5879757', parser: parseNewsAPI, name: 'NewsAPI' },
+    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.dunya.com/rss/ekonomi.xml', parser: parseRSS, name: 'DÃ¼nya' },
+    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.bloomberght.com/rss/ekonomi', parser: parseRSS, name: 'Bloomberg HT' },
+    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.ekonomim.com/rss/ekonomi.xml', parser: parseRSS, name: 'Ekonomim' },
+    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.haberturk.com/rss/ekonomi.xml', parser: parseRSS, name: 'HabertÃ¼rk' },
+    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.ensonhaber.com/rss/ekonomi.xml', parser: parseRSS, name: 'Ensonhaber' },
+  ];
+
+  // TÃ¼m kaynaklarÄ± dene, hepsinden topla
+  const allNews = [];
+
+  for (const src of sources) {
+    try {
+      const r = await fetch(src.url);
+      const res = await r.json();
+      const items = src.parser(res);
+      if (items && items.length > 0) {
+        const mapped = items.map(a => ({
+          title: a.title, description: a.description || a.content,
+          url: a.url || a.link, source: a.source || src.name,
+          date: a.date || a.pubDate, image: a.image || a.thumbnail || a.enclosure?.link || null
+        }));
+        mapped.forEach(item => {
+          if (item.title && !allNews.some(ex => ex.title === item.title)) {
+            allNews.push(item);
+          }
+        });
+      }
+    } catch(e) { /* skip */ }
+  }
+
+  if (allNews.length > 0) {
+    allNews.sort((a,b) => new Date(b.date) - new Date(a.date));
+    data.news = allNews.slice(0, 50);
+    saveData();
+    fetched = true;
+    showToast(allNews.length + ' haber yÃ¼klendi', 'success');
+  }
+
+  if (!fetched) {
+    data.news = getDefaultNews();
+    saveData();
+    showToast('Haber kaynaklarÄ±na ulaÅŸÄ±lamadÄ±, varsayÄ±lan haberler gÃ¶steriliyor', 'warning');
+  }
+
+  renderNews();
+  renderDashboard();
+}
+
+function parseNewsAPI(res) {
+  if (res.status === 'ok' && res.articles && res.articles.length > 0) {
+    return res.articles.map(a => ({ title: a.title, description: a.description, url: a.url, source: a.source?.name || 'Haber', date: a.publishedAt, image: a.urlToImage }));
+  }
+  return null;
+}
+
+function parseRSS(res) {
+  if (res.status === 'ok' && res.items && res.items.length > 0) {
+    return res.items.map(a => ({ title: a.title, description: a.description || a.content, url: a.link, source: '', date: a.pubDate, image: a.thumbnail || a.enclosure?.link || null }));
+  }
+  return null;
+}
+
+function getDefaultNews() {
+  return [
+    { title: 'KDV Beyannamesi Teslim SÃ¼releri', description: 'KDV beyannameleri her ayÄ±n 26. gÃ¼nÃ¼ mesai bitimine kadar verilmelidir.', url: '#', source: 'Mali Haber', date: new Date().toISOString(), image: null },
+    { title: 'Muhtasar Beyanname DÃ¶nemi', description: 'Muhtasar beyannameler her ayÄ±n 26. gÃ¼nÃ¼ne kadar verilmelidir.', url: '#', source: 'Mali Haber', date: new Date().toISOString(), image: null },
+    { title: 'GeÃ§ici Vergi Beyannamesi', description: 'GeÃ§ici vergi beyannameleri MayÄ±s, AÄŸustos, KasÄ±m ve Åubat aylarÄ±nda verilir.', url: '#', source: 'Mali Haber', date: new Date().toISOString(), image: null },
+    { title: 'Kurumlar Vergisi Beyannamesi', description: 'Kurumlar vergisi beyannamesi Nisan ayÄ± sonuna kadar verilmelidir.', url: '#', source: 'Mali Haber', date: new Date().toISOString(), image: null },
+    { title: 'Gelir Vergisi Beyannamesi', description: 'Gelir vergisi beyannamesi Mart ayÄ± sonuna kadar verilmelidir.', url: '#', source: 'Mali Haber', date: new Date().toISOString(), image: null },
+  ];
+}
+
+function renderNews() {
+  const container = document.getElementById('newsContainer');
+  const news = data.news || [];
+  document.getElementById('newsCount').textContent = '(' + news.length + ' haber)';
+  if (news.length === 0) { container.innerHTML = '<div class="col-12 text-center py-5 text-muted"><i class="bi bi-newspaper fs-1 d-block mb-2"></i><p>Haber bulunamadÄ±</p></div>'; return; }
+  container.innerHTML = news.map((n, i) => {
+    const src = n.source || 'Haber';
+    const srcColors = { 'Mali Haber': '#1a73e8', 'Vergide GÃ¼ndem': '#e91e63', 'DÃ¼nya': '#00897b', 'Bloomberg': '#7b1fa2', 'Ekonomi': '#a86800' };
+    const srcColor = srcColors[src] || '#5f6368';
+    const initials = src.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+    const img = n.image ? '<img src="' + n.image.replace(/['"]/g,'') + '" style="width:100%;height:140px;object-fit:cover;border-radius:8px 8px 0 0;" onerror="this.style.display=\'none\'">' : '';
+    return '<div class="col-lg-6 col-xl-4"><div class="card overflow-hidden" style="cursor:pointer;transition:all .2s;" onmouseover="this.style.boxShadow=\'0 4px 12px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'">' +
+      img +
+      '<div class="p-3">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+      '<div style="width:24px;height:24px;border-radius:50%;background:' + srcColor + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700;flex-shrink:0;">' + initials + '</div>' +
+      '<span style="font-size:11px;font-weight:600;color:' + srcColor + ';">' + src + '</span>' +
+      '<span class="ms-auto text-muted" style="font-size:10px;">' + timeAgo(n.date) + '</span></div>' +
+      '<div class="fw-semibold" style="font-size:13px;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + (n.title || '') + '</div>' +
+      (n.description ? '<div class="text-muted" style="font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px;">' + n.description + '</div>' : '') +
+      (n.url && n.url !== '#' ? '<a href="' + n.url.replace(/['"]/g,'') + '" target="_blank" class="btn btn-sm btn-outline-primary" style="font-size:11px;" onclick="event.stopPropagation()"><i class="bi bi-box-arrow-up-right"></i> Oku</a>' : '') +
+      '<button class="btn btn-sm btn-outline-danger" style="font-size:11px;float:right;" onclick="event.stopPropagation();deleteNews(' + i + ')" title="Sil"><i class="bi bi-trash"></i></button>' +
+      '</div></div></div>';
+  }).join('');
+}
+
+function deleteNews(index) {
+  if (!confirm('Bu haberi sil?')) return;
+  data.news.splice(index, 1);
+  saveData();
+  renderNews();
+  renderDashboard();
+  showToast('Haber silindi', 'success');
+}
+
+// ========== SEARCH ==========
+function globalSearch(q) {
+  if (!q || q.length < 2) return;
+  const query = q.toLowerCase();
+  let count = 0;
+  data.clients.filter(c => c.name.toLowerCase().includes(query) || (c.taxNo && c.taxNo.includes(query))).forEach(() => count++);
+  data.declarations.filter(d => { const c = getClient(d.clientId); return d.type.toLowerCase().includes(query) || (c && c.name.toLowerCase().includes(query)); }).forEach(() => count++);
+  if (count > 0) showToast(count + ' sonuÃ§ bulundu', 'info');
+}
+
+function populateYearFilter() {
+  const years = [...new Set(data.declarations.map(d => d.year))].sort((a,b) => b - a);
+  const sel = document.getElementById('declYearFilter');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="all">TÃ¼m YÄ±llar</option>' + years.map(y => '<option value="' + y + '">' + y + '</option>').join('');
+  if (cur) sel.value = cur;
+}
+
+function exportCSV() {
+  const filter = document.getElementById('declStatusFilter')?.value || 'all';
+  let list = [...data.declarations];
+  if (filter !== 'all') list = list.filter(d => d.status === filter);
+  const rows = [['MÃ¼kellef','TÃ¼r','DÃ¶nem','YÄ±l','Son Teslim','GÃ¶nderilme','Durum']];
+  list.forEach(d => {
+    const c = getClient(d.clientId);
+    rows.push([(c ? c.name : '?'), d.type, (d.periodName || d.period), d.year, d.dueDate, d.submitDate || '-', d.status === 'submitted' ? 'Verildi' : d.status === 'late' ? 'GecikmiÅŸ' : 'Bekliyor']);
+  });
+  const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'beyannameler_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  showToast('CSV dÄ±ÅŸa aktarÄ±ldÄ±', 'success');
+}
+
+// ========== DATA MANAGEMENT ==========
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'beyantakip_yedek_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  showToast('Veriler yedeklendi', 'success');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (imported.clients && imported.declarations) {
+        data = imported;
+        saveData();
+        renderAll();
+        showToast('Veriler yÃ¼klendi', 'success');
+      } else showToast('GeÃ§ersiz dosya!', 'danger');
+    } catch(err) { showToast('Dosya okunamadÄ±!', 'danger'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function resetAll() {
+  if (!confirm('TÃ¼m veriler silinecek! Emin misiniz?')) return;
+  if (!confirm('Son kez: TÃ¼m veriler silinecek!')) return;
+  data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  saveData();
+  renderAll();
+  showToast('SÄ±fÄ±rlandÄ±', 'info');
+}
+
+function updateBadge() {
+  const pending = data.declarations.filter(d => d.status === 'pending').length;
+  const badge = document.getElementById('pendingBadge');
+  badge.textContent = pending;
+  badge.style.display = pending > 0 ? 'inline' : 'none';
+}
+
+// ========== NEW FEATURES ==========
+
+// Dark Mode
+function toggleDarkMode() {
+  const enabled = document.getElementById('darkModeToggle').checked;
+  document.body.classList.toggle('dark-mode', enabled);
+  data.theme = enabled ? 'dark' : 'light';
+  saveData();
+  showToast(enabled ? 'KaranlÄ±k tema aÃ§Ä±ldÄ±' : 'KaranlÄ±k tema kapatÄ±ldÄ±', 'success');
+}
+
+// Sound
+let soundEnabled = false;
+function toggleSound() {
+  soundEnabled = document.getElementById('soundToggle').checked;
+  data.soundEnabled = soundEnabled;
+  saveData();
+  playSound();
+}
+function playSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 800; gain.gain.value = 0.3;
+    osc.start(); osc.stop(ctx.currentTime + 0.15);
+  } catch(e) { /* silent */ }
+}
+function notifySound() { if (soundEnabled) playSound(); }
+
+// Client Card/List toggle
+let clientViewMode = 'table';
+function toggleClientView() {
+  clientViewMode = clientViewMode === 'table' ? 'card' : 'table';
+  const btn = document.getElementById('viewToggleBtn');
+  btn.innerHTML = clientViewMode === 'table' ? '<i class="bi bi-grid-3x3-gap-fill"></i>' : '<i class="bi bi-list-ul"></i>';
+  renderClients();
+}
+
+// Client File upload
+function handleClientFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const info = document.getElementById('clientFileInfo');
+    info.innerHTML = '<i class="bi bi-paperclip"></i> ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB) <button class="btn btn-sm btn-outline-danger" onclick="clearClientFile()" style="font-size:10px;padding:0 6px;">X</button>';
+    info.dataset.fileName = file.name;
+    info.dataset.fileData = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearClientFile() {
+  document.getElementById('clientFile').value = '';
+  document.getElementById('clientFileInfo').innerHTML = '';
+  delete document.getElementById('clientFileInfo').dataset.fileName;
+}
+
+// Client performance score
+function getPerformanceScore(clientId) {
+  const decls = data.declarations.filter(d => d.clientId === clientId);
+  if (decls.length === 0) return { score: 0, label: 'Veri Yok', color: '#9e9e9e' };
+  const submitted = decls.filter(d => d.status === 'submitted').length;
+  const late = decls.filter(d => d.status === 'late').length;
+  const rate = Math.round((submitted / decls.length) * 100);
+  if (rate >= 80) return { score: rate, label: 'Ä°yi', color: '#1e7e34' };
+  if (rate >= 50) return { score: rate, label: 'Orta', color: '#a86800' };
+  return { score: rate, label: 'ZayÄ±f', color: '#c5221f' };
+}
+
+// Yearly comparison chart
+function renderYearlyComparison() {
+  try {
+    if (yearlyChartInstance) { yearlyChartInstance.destroy(); yearlyChartInstance = null; }
+    const canvas = document.getElementById('yearlyComparisonChart');
+    if (!canvas) return;
+    const years = [...new Set(data.declarations.map(d => d.year))].sort();
+    if (years.length < 1) return;
+    const months = ['Ocak','Åubat','Mart','Nisan','MayÄ±s','Haziran','Temmuz','AÄŸustos','EylÃ¼l','Ekim','KasÄ±m','AralÄ±k'];
+    const datasets = years.map((year, yi) => {
+      const monthlyCounts = Array(12).fill(0);
+      data.declarations.filter(d => d.year === year && (d.type === 'KDV' || d.type === 'Muhtasar')).forEach(d => {
+        if (d.period >= 1 && d.period <= 12) monthlyCounts[d.period - 1]++;
+      });
+      return { label: '' + year, data: monthlyCounts, borderColor: ['#1a73e8','#1e7e34','#a86800','#7b1fa2'][yi % 4], backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 };
+    });
+    yearlyChartInstance = new Chart(canvas.getContext('2d'), {
+      type: 'line', data: { labels: months, datasets },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  } catch(e) { console.warn('Yearly chart error:', e); }
+}
+
+// Archive year filter
+function filterByArchiveYear() {
+  const year = document.getElementById('archiveYearSelector').value;
+  if (year === 'all') { renderDeclarations(); return; }
+  const filtered = data.declarations.filter(d => d.year === parseInt(year));
+  const tb = document.getElementById('declarationsTableBody');
+  if (filtered.length === 0) {
+    tb.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">Bu yÄ±la ait beyanname yok</td></tr>';
+    return;
+  }
+  tb.innerHTML = filtered.map(d => {
+    const c = getClient(d.clientId);
+    const sc = d.status === 'submitted' ? 'status-submitted' : d.status === 'late' ? 'status-late' : 'status-pending';
+    const st = d.status === 'submitted' ? 'Verildi' : d.status === 'late' ? 'GecikmiÅŸ' : 'Bekliyor';
+    return '<tr data-id="' + d.id + '"><td class="text-center"><input type="checkbox" class="form-check-input decl-checkbox" value="' + d.id + '" onchange="updateBulkActions()"></td><td class="fw-medium">' + (c ? c.name : '?') + '</td><td>' + d.type + '</td><td>' + (d.periodName || d.period) + '</td><td>' + d.year + '</td><td>' + new Date(d.dueDate).toLocaleDateString('tr-TR') + '</td><td>' + (d.submitDate ? new Date(d.submitDate).toLocaleDateString('tr-TR') : '-') + '</td><td><span class="status-badge ' + sc + '">' + st + '</span></td><td style="white-space:nowrap;">' +
+      (d.status !== 'submitted' ? '<button class="btn btn-sm btn-success btn-icon me-1" onclick="markAsSubmitted(\'' + d.id + '\')" title="Verildi"><i class="bi bi-check-lg"></i></button>' : '') +
+      '<button class="btn btn-sm btn-outline-primary btn-icon me-1" onclick="openDeclarationModal(\'' + d.id + '\')" title="DÃ¼zenle"><i class="bi bi-pencil"></i></button>' +
+      '<button class="btn btn-sm btn-outline-danger btn-icon" onclick="deleteDeclaration(\'' + d.id + '\')" title="Sil"><i class="bi bi-trash"></i></button></td></tr>';
+  }).join('');
+}
+
+function populateArchiveYears() {
+  const years = [...new Set(data.declarations.map(d => d.year))].sort((a,b) => b - a);
+  const sel = document.getElementById('archiveYearSelector');
+  if (!sel) return;
+  sel.innerHTML = '<option value="all">TÃ¼mÃ¼</option>' + years.map(y => '<option value="' + y + '">' + y + '</option>').join('');
+}
+
+// Batch PDF report
+function exportAllPDF() {
+  const w = window.open('', '_blank');
+  let html = '<html><head><meta charset="utf-8"><title>TÃ¼m MÃ¼kellefler Raporu</title><style>body{font-family:Arial;padding:20px;font-size:12px;}h1{font-size:20px;}h2{font-size:16px;margin-top:20px;}table{width:100%;border-collapse:collapse;margin-bottom:10px;}th,td{border:1px solid #ddd;padding:6px;text-align:left;}th{background:#f5f5f5;}p{margin:2px 0;}</style></head><body>';
+  html += '<h1>BeyanTakip Toplu Rapor</h1><p>' + new Date().toLocaleDateString('tr-TR') + '</p><hr>';
+  data.clients.forEach(c => {
+    const decls = data.declarations.filter(d => d.clientId === c.id);
+    html += '<h2>' + c.name + '</h2>';
+    html += '<p><strong>Vergi No:</strong> ' + (c.taxNo || '-') + ' | <strong>Tel:</strong> ' + (c.phone || '-') + '</p>';
+    if (decls.length === 0) { html += '<p class="text-muted">Beyanname yok</p>'; return; }
+    html += '<table><thead><tr><th>TÃ¼r</th><th>DÃ¶nem</th><th>YÄ±l</th><th>Son Teslim</th><th>Durum</th></tr></thead><tbody>';
+    decls.forEach(d => {
+      const st = d.status === 'submitted' ? 'Verildi' : d.status === 'late' ? 'GecikmiÅŸ' : 'Bekliyor';
+      html += '<tr><td>' + d.type + '</td><td>' + (d.periodName || d.period) + '</td><td>' + d.year + '</td><td>' + new Date(d.dueDate).toLocaleDateString('tr-TR') + '</td><td>' + st + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  });
+  html += '<p style="margin-top:30px;color:#888;">BeyanTakip v2.0</p></body></html>';
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => { w.print(); }, 500);
+}
+
+// ========== UPDATE SYSTEM ==========
+const APP_VERSION = '1.0.0';
+const UPDATE_URL = 'https://raw.githubusercontent.com/ArdaEkiz0/beyanname-takip/main/index.html';
+function checkForUpdates(showResult) {
+  const checkBtn = document.getElementById('updateCheckBtn');
+  if (checkBtn) checkBtn.disabled = true;
+  fetch(UPDATE_URL + '?t=' + Date.now())
+    .then(r => { if (!r.ok) throw new Error('Sunucuya eriÅŸilemedi'); return r.text(); })
+    .then(html => {
+      const match = html.match(/const APP_VERSION\s*=\s*'([^']+)'/);
+      if (!match) throw new Error('SÃ¼rÃ¼m bilgisi bulunamadÄ±');
+      const remoteVer = match[1];
+      const current = APP_VERSION.split('.').map(Number);
+      const remote = remoteVer.split('.').map(Number);
+      let newer = false;
+      for (let i = 0; i < 3; i++) {
+        if ((remote[i]||0) > (current[i]||0)) { newer = true; break; }
+        if ((remote[i]||0) < (current[i]||0)) break;
+      }
+      if (newer) {
+        if (confirm('Yeni sÃ¼rÃ¼m (' + remoteVer + ') bulundu. Åimdi indirmek ister misiniz?')) {
+          const a = document.createElement('a');
+          a.href = UPDATE_URL;
+          a.download = 'index.html';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          showToast('Yeni sÃ¼rÃ¼m indirildi. DosyayÄ± eski index.html\'in Ã¼zerine kopyalayÄ±n.', 'success');
+        }
+      } else {
+        showToast('Zaten en gÃ¼ncel sÃ¼rÃ¼mÃ¼ kullanÄ±yorsunuz (' + APP_VERSION + ').', 'info');
+      }
+    })
+    .catch(err => { showToast('GÃ¼ncelleme kontrolÃ¼ baÅŸarÄ±sÄ±z: ' + err.message, 'error'); })
+    .finally(() => { if (checkBtn) checkBtn.disabled = false; });
+}
+
+// Keyboard shortcuts
+const DEFAULT_SHORTCUTS = {
+  newDeclaration: 'Ctrl+N',
+  newClient: 'Ctrl+M',
+  search: 'Ctrl+F',
+  darkMode: 'Ctrl+D',
+  page1: '1', page2: '2', page3: '3', page4: '4', page5: '5', page6: '6'
+};
+const SHORTCUT_LABELS = {
+  newDeclaration: 'Yeni beyanname', newClient: 'Yeni mÃ¼kellef', search: 'Ara',
+  darkMode: 'KaranlÄ±k tema',
+  page1: 'Sayfa 1 (Panel)', page2: 'Sayfa 2 (MÃ¼kellefler)', page3: 'Sayfa 3 (Beyannameler)',
+  page4: 'Sayfa 4 (Takvim)', page5: 'Sayfa 5 (Haberler)', page6: 'Sayfa 6 (Ayarlar)'
+};
+function getShortcuts() {
+  const saved = loadData().shortcuts;
+  if (saved && typeof saved === 'object') return { ...DEFAULT_SHORTCUTS, ...saved };
+  return { ...DEFAULT_SHORTCUTS };
+}
+function setShortcuts(s) { const d = loadData(); d.shortcuts = s; saveData(d); }
+function parseShortcut(str) {
+  const parts = str.split('+').map(p => p.trim());
+  const key = parts.pop().toLowerCase();
+  return { ctrlKey: parts.includes('Ctrl'), shiftKey: parts.includes('Shift'), altKey: parts.includes('Alt'), key };
+}
+function matchShortcut(e, shortcutStr) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return false;
+  if (!shortcutStr) return false;
+  const s = parseShortcut(shortcutStr);
+  if (e.ctrlKey !== s.ctrlKey || e.shiftKey !== s.shiftKey || e.altKey !== s.altKey) return false;
+  if (s.key === 'n' || s.key === 'm' || s.key === 'f' || s.key === 'd') return e.key.toLowerCase() === s.key;
+  return e.key === s.key;
+}
+function setupKeyboardShortcuts() {
+  const sc = getShortcuts();
+  const actions = {
+    newDeclaration: [sc.newDeclaration, () => openDeclarationModal()],
+    newClient: [sc.newClient, () => openClientModal()],
+    search: [sc.search, () => { document.getElementById('globalSearch')?.focus(); }],
+    darkMode: [sc.darkMode, () => { const tog = document.getElementById('darkModeToggle'); if (tog) { tog.checked = !tog.checked; toggleDarkMode(); } }]
+  };
+  for (let i = 1; i <= 6; i++) {
+    const key = 'page' + i;
+    const idx = i - 1;
+    actions[key] = [sc[key], () => { const pages = ['dashboard','clients','declarations','calendar','news','settings']; showPage(pages[idx]); }];
+  }
+  document.addEventListener('keydown', function(e) {
+    for (const a of Object.values(actions)) {
+      if (matchShortcut(e, a[0])) { e.preventDefault(); a[1](); return; }
+    }
+  });
+}
+function renderShortcutsEditor() {
+  const sc = getShortcuts();
+  let html = '';
+  for (const [key, label] of Object.entries(SHORTCUT_LABELS)) {
+    html += '<div class="mb-1 d-flex align-items-center gap-2"><span style="min-width:140px;">' + label + '</span><input type="text" class="form-control form-control-sm shortcut-input" data-key="' + key + '" value="' + sc[key] + '" style="width:120px;font-family:monospace;"></div>';
+  }
+  document.getElementById('shortcutsEditor').innerHTML = html;
+}
+function saveShortcuts() {
+  const sc = {};
+  document.querySelectorAll('.shortcut-input').forEach(inp => { sc[inp.dataset.key] = inp.value.trim(); });
+  setShortcuts(sc);
+  showToast('KÄ±sayollar kaydedildi. SayfayÄ± yenileyin.', 'success');
+}
+function resetShortcuts() {
+  setShortcuts({...DEFAULT_SHORTCUTS});
+  renderShortcutsEditor();
+  showToast('VarsayÄ±lan kÄ±sayollara dÃ¶nÃ¼ldÃ¼.', 'success');
+}
+
+// Override showToast to play sound on success
+const originalShowToast = showToast;
+showToast = function(msg, type) {
+  originalShowToast(msg, type);
+  if (type === 'success') notifySound();
+};
+
+// ========== INIT ==========
+function renderAll() { renderDashboard(); renderClients(); renderDeclarations(); renderCalendar(); renderNews(); renderPayments(); populateYearFilter(); populateArchiveYears(); renderShortcutsEditor(); }
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', function(e) { e.preventDefault(); showPage(this.dataset.page); });
+  });
+  // Auto-generate declarations on first run if clients exist but no declarations
+  if (data.clients.length > 0 && data.declarations.length === 0) {
+    generateAutoDeclarations();
+  }
+  data.declarations.forEach(d => { if (d.status === 'pending' && new Date(d.dueDate) < new Date()) d.status = 'late'; });
+  populateYearFilter();
+  populateArchiveYears();
+  // Restore saved settings
+  if (document.getElementById('notifToggle')) document.getElementById('notifToggle').checked = data.notifEnabled || false;
+  if (data.theme === 'dark') { document.body.classList.add('dark-mode'); if (document.getElementById('darkModeToggle')) document.getElementById('darkModeToggle').checked = true; }
+  if (data.soundEnabled) { soundEnabled = true; if (document.getElementById('soundToggle')) document.getElementById('soundToggle').checked = true; }
+  // Show version
+  document.getElementById('appVersionLabel').textContent = APP_VERSION;
+  // Auto-check for updates (once per day)
+  const lastCheck = localStorage.getItem('beyantakip_update_check');
+  if (!lastCheck || Date.now() - parseInt(lastCheck) > 86400000) {
+    localStorage.setItem('beyantakip_update_check', Date.now().toString());
+    checkForUpdates(false);
+  }
+  // Setup keyboard shortcuts
+  setupKeyboardShortcuts();
+  showPage('dashboard');
+  // Check notifications
+  checkNotifications();
+  // Her aÃ§Ä±lÄ±ÅŸta haberleri gÃ¼ncelle
+  fetchNews().catch(() => {});
+});
+</script>
+</body>
+</html>
