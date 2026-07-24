@@ -1464,74 +1464,32 @@ function timeAgo(dateStr) {
   return d.toLocaleDateString('tr-TR');
 }
 
+const NEWS_URL = 'https://raw.githubusercontent.com/ArdaEkiz0/beyanname-takip/main/news.json';
 async function fetchNews() {
   const container = document.getElementById('newsContainer');
   container.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted small">Haberler yÃ¼kleniyor...</p></div>';
-
-  const allNews = [];
-  const rssSources = [
-    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.dunya.com/rss/ekonomi.xml', name: 'DÃ¼nya' },
-    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.bloomberght.com/rss/ekonomi', name: 'Bloomberg HT' },
-    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.ekonomim.com/rss/ekonomi.xml', name: 'Ekonomim' },
-    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.haberturk.com/rss/ekonomi.xml', name: 'HabertÃ¼rk' },
-    { url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.ensonhaber.com/rss/ekonomi.xml', name: 'Ensonhaber' },
-  ];
-
-  await Promise.allSettled(rssSources.map(src => fetchJSONP(src.url).then(data => {
-    if (data && data.status === 'ok' && data.items) {
-      data.items.forEach(item => {
-        if (item.title && !allNews.some(ex => ex.title === item.title)) {
-          allNews.push({
-            title: item.title,
-            description: item.description || item.content,
-            url: item.link,
-            source: src.name,
-            date: item.pubDate,
-            image: item.thumbnail || item.enclosure?.link || null
-          });
-        }
-      });
-    }
-  }).catch(() => {})));
-
   try {
-    const r = await fetch('https://newsapi.org/v2/everything?q=vergi+muhasebe+maliye&language=tr&sortBy=publishedAt&pageSize=20&apiKey=05b0d2fc72d44a88803a9e33e5879757');
-    const res = await r.json();
-    if (res.status === 'ok' && res.articles) {
-      res.articles.forEach(a => {
-        if (a.title && !allNews.some(ex => ex.title === a.title)) {
-          allNews.push({ title: a.title, description: a.description, url: a.url, source: a.source?.name || 'Haber', date: a.publishedAt, image: a.urlToImage });
-        }
-      });
+    const r = await fetch(NEWS_URL + '?t=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const items = await r.json();
+    if (items && items.length > 0) {
+      data.news = items.slice(0, 50);
+      saveData();
+      showToast(items.length + ' haber yÃ¼klendi', 'success');
+    } else {
+      throw new Error('Haber bulunamadÄ±');
     }
-  } catch(e) { /* skip */ }
-
-  if (allNews.length > 0) {
-    allNews.sort((a,b) => new Date(b.date) - new Date(a.date));
-    data.news = allNews.slice(0, 50);
-    saveData();
-    showToast(allNews.length + ' haber yÃ¼klendi', 'success');
-  } else {
-    data.news = getDefaultNews();
-    saveData();
-    showToast('Haber kaynaklarÄ±na ulaÅŸÄ±lamadÄ±, varsayÄ±lan haberler gÃ¶steriliyor', 'warning');
+  } catch(e) {
+    if (data.news && data.news.length > 0) {
+      showToast('Haberler gÃ¼ncellenemedi, eskiler gÃ¶steriliyor', 'warning');
+    } else {
+      data.news = getDefaultNews();
+      saveData();
+      showToast('Haber kaynaÄŸÄ±na ulaÅŸÄ±lamadÄ±', 'warning');
+    }
   }
-
   renderNews();
   renderDashboard();
-}
-
-function fetchJSONP(url) {
-  return new Promise((resolve, reject) => {
-    const callbackName = 'jsonp_' + Math.random().toString(36).slice(2);
-    const fullUrl = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
-    window[callbackName] = function(data) { delete window[callbackName]; document.body.removeChild(script); resolve(data); };
-    const script = document.createElement('script');
-    script.src = fullUrl;
-    script.onerror = function() { delete window[callbackName]; document.body.removeChild(script); reject(new Error('JSONP failed')); };
-    document.body.appendChild(script);
-    setTimeout(() => { if (window[callbackName]) { delete window[callbackName]; document.body.removeChild(script); reject(new Error('JSONP timeout')); } }, 10000);
-  });
 }
 
 function getDefaultNews() {
